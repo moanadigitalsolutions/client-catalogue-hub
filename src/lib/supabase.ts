@@ -18,54 +18,42 @@ export const initializeDatabase = async () => {
   console.log('Checking database connection and tables...');
   
   try {
-    // Test the connection
-    const { data: tableExists, error: tableCheckError } = await supabase
+    // Test the connection by attempting to query the clients table
+    const { error: queryError } = await supabase
       .from('clients')
-      .select('count', { count: 'exact', head: true });
+      .select('id')
+      .limit(1);
 
-    if (tableCheckError) {
-      console.log('Clients table does not exist. Creating table...');
+    if (queryError) {
+      console.log('Creating clients table as it does not exist...');
       
-      // Create the clients table if it doesn't exist
-      const { error: createTableError } = await supabase
-        .rpc('create_clients_table', {});
+      // Create the clients table directly
+      const { error: createError } = await supabase.rpc('exec', {
+        sql: `
+          CREATE TABLE IF NOT EXISTS public.clients (
+            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+            name TEXT NOT NULL,
+            email TEXT,
+            phone TEXT,
+            street TEXT,
+            suburb TEXT,
+            city TEXT,
+            postcode TEXT,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+          );
+          
+          -- Enable Row Level Security
+          ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
+          
+          -- Create policy to allow all operations for authenticated users
+          CREATE POLICY "Allow full access to authenticated users" ON public.clients
+            FOR ALL USING (auth.role() = 'authenticated');
+        `
+      });
 
-      if (createTableError) {
-        // If the RPC function doesn't exist, create the table directly
-        const { error: directCreateError } = await supabase
-          .from('clients')
-          .insert([])
-          .select()
-          .then(async () => {
-            // Create the table using raw SQL
-            return await supabase.rpc('exec', {
-              sql: `
-                CREATE TABLE IF NOT EXISTS public.clients (
-                  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-                  name TEXT NOT NULL,
-                  email TEXT,
-                  phone TEXT,
-                  street TEXT,
-                  suburb TEXT,
-                  city TEXT,
-                  postcode TEXT,
-                  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
-                );
-                
-                -- Enable Row Level Security
-                ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
-                
-                -- Create policy to allow all operations for authenticated users
-                CREATE POLICY "Allow full access to authenticated users" ON public.clients
-                  FOR ALL USING (auth.role() = 'authenticated');
-              `
-            });
-          });
-
-        if (directCreateError) {
-          console.error('Error creating clients table:', directCreateError);
-          throw directCreateError;
-        }
+      if (createError) {
+        console.error('Error creating clients table:', createError);
+        throw createError;
       }
       
       console.log('Clients table created successfully');
