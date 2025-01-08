@@ -46,6 +46,7 @@ export const useDocumentDeletionRequests = () => {
             name
           )
         `)
+        .eq('status', 'pending')  // Only fetch pending requests
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -53,8 +54,23 @@ export const useDocumentDeletionRequests = () => {
         throw error;
       }
 
-      console.log('Document deletion requests:', data);
-      return data;
+      // Filter out duplicate requests for the same document, keeping only the most recent
+      const uniqueRequests = data?.reduce((acc: any[], request: any) => {
+        const existingIndex = acc.findIndex(
+          r => r.document_id === request.document_id
+        );
+        
+        if (existingIndex === -1) {
+          acc.push(request);
+        } else if (new Date(request.created_at) > new Date(acc[existingIndex].created_at)) {
+          acc[existingIndex] = request;
+        }
+        
+        return acc;
+      }, []);
+
+      console.log('Document deletion requests:', uniqueRequests);
+      return uniqueRequests;
     },
   });
 };
