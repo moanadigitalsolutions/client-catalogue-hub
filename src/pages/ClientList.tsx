@@ -18,7 +18,6 @@ import {
 import {
   Pagination,
   PaginationContent,
-  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
@@ -31,34 +30,72 @@ const ClientList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const { data: clients, isLoading } = useQuery({
+  const { data: clients, isLoading, error } = useQuery({
     queryKey: ['clients', searchTerm, currentPage],
     queryFn: async () => {
       console.log('Fetching clients from Supabase...');
-      let query = supabase
-        .from('clients')
-        .select('*')
-        .range((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage - 1);
+      try {
+        // First check if the table exists
+        const { data: tables } = await supabase
+          .from('information_schema.tables')
+          .select('table_name')
+          .eq('table_schema', 'public')
+          .eq('table_name', 'clients');
 
-      if (searchTerm) {
-        query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+        if (!tables || tables.length === 0) {
+          console.log('Clients table does not exist');
+          toast.error('Database table not found. Please ensure the clients table is created.');
+          return [];
+        }
+
+        let query = supabase
+          .from('clients')
+          .select('*')
+          .range((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage - 1);
+
+        if (searchTerm) {
+          query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+          console.error('Error fetching clients:', error);
+          toast.error('Failed to fetch clients');
+          throw error;
+        }
+
+        console.log('Fetched clients:', data);
+        return data || [];
+      } catch (err) {
+        console.error('Error in query:', err);
+        toast.error('Failed to fetch clients. Please check the database connection.');
+        throw err;
       }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching clients:', error);
-        toast.error('Failed to fetch clients');
-        throw error;
-      }
-
-      console.log('Fetched clients:', data);
-      return data;
     },
+    retry: 1,
   });
 
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Client List</h1>
+          <Button onClick={() => navigate("/clients/new")}>Add New Client</Button>
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center text-red-500">
+              Error loading clients. Please ensure the database is properly configured.
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (isLoading) {
-    return <div>Loading clients...</div>;
+    return <div className="p-8">Loading clients...</div>;
   }
 
   return (
@@ -84,40 +121,46 @@ const ClientList = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Address</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {clients?.map((client) => (
-                  <TableRow key={client.id}>
-                    <TableCell>{client.name}</TableCell>
-                    <TableCell>{client.email}</TableCell>
-                    <TableCell>{client.phone}</TableCell>
-                    <TableCell>
-                      {client.street}, {client.suburb}, {client.city} {client.postcode}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/clients/${client.id}`)}
-                      >
-                        View
-                      </Button>
-                    </TableCell>
+          {clients && clients.length > 0 ? (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Address</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {clients.map((client) => (
+                    <TableRow key={client.id}>
+                      <TableCell>{client.name}</TableCell>
+                      <TableCell>{client.email}</TableCell>
+                      <TableCell>{client.phone}</TableCell>
+                      <TableCell>
+                        {client.street}, {client.suburb}, {client.city} {client.postcode}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/clients/${client.id}`)}
+                        >
+                          View
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center py-4 text-muted-foreground">
+              No clients found. Add your first client to get started.
+            </div>
+          )}
 
           <div className="mt-4">
             <Pagination>

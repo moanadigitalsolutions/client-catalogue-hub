@@ -6,4 +6,18 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 if (!supabaseUrl) throw new Error('Missing SUPABASE_URL');
 if (!supabaseAnonKey) throw new Error('Missing SUPABASE_ANON_KEY');
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+  },
+});
+
+// Test the connection
+supabase.from('clients').select('count', { count: 'exact', head: true })
+  .then(() => {
+    console.log('Successfully connected to Supabase');
+  })
+  .catch((error) => {
+    console.error('Error connecting to Supabase:', error);
+  });
