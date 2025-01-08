@@ -1,32 +1,31 @@
-export type UserRole = "admin" | "employee";
-
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: UserRole;
-}
-
 export type FieldType = 
-  | "text" 
-  | "number" 
-  | "date" 
-  | "email" 
-  | "textarea" 
-  | "file" 
+  | "text"
+  | "number"
+  | "date"
+  | "email"
+  | "textarea"
   | "checkbox"
   | "radio"
   | "select"
-  | "rating"
   | "phone"
   | "url"
   | "time";
 
 export interface FormField {
   id: string;
-  field_id: string;
   label: string;
+  field_id: string;
   type: FieldType;
   required: boolean;
   options?: string[];
+  order_index: number;
 }
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+}
+
+export type UserRole = "admin" | "employee";

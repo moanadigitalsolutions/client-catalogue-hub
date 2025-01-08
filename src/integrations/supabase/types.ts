@@ -134,7 +134,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      add_column_if_not_exists: {
+        Args: {
+          table_name: string
+          column_name: string
+          column_type: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
