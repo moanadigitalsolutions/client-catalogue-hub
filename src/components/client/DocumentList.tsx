@@ -19,6 +19,7 @@ interface Document {
   content_type: string;
   size: number;
   created_at: string;
+  file_path: string;
 }
 
 interface DocumentListProps {
