@@ -34,6 +34,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    console.log("AuthContext: Attempting sign in");
+    
+    // Handle temporary admin login
+    if (email === "admin@temp.com" && password === "admin123") {
+      console.log("AuthContext: Using temporary admin login");
+      // Set a mock user for the temporary admin
+      setUser({ 
+        id: 'temp-admin',
+        email: 'admin@temp.com',
+        // Add other required User properties
+        aud: 'authenticated',
+        created_at: new Date().toISOString(),
+        role: 'authenticated',
+      } as User);
+      navigate('/dashboard');
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -46,6 +64,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    setUser(null);
     navigate('/login');
   };
 
