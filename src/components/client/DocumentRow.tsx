@@ -3,15 +3,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { DocumentActions } from "./DocumentActions";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-
-interface Document {
-  id: string;
-  filename: string;
-  content_type: string;
-  size: number;
-  created_at: string;
-  file_path: string;
-}
+import { Document } from "@/types/documents";
 
 interface DocumentRowProps {
   document: Document;
