@@ -25,7 +25,7 @@ export const DeletionRequests = () => {
         .select(`
           *,
           clients (name),
-          profiles!client_deletion_requests_requested_by_fkey (name)
+          profiles!client_deletion_requests_requested_by_profiles_fkey (name)
         `)
         .order('created_at', { ascending: false });
 
