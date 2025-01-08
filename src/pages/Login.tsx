@@ -13,12 +13,20 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Attempting login with email:", email);
+    
     try {
       await signIn(email, password);
+      console.log("Login successful");
       toast.success("Logged in successfully");
-    } catch (error) {
-      console.error("Login error:", error);
-      toast.error("Failed to login. Please check your credentials.");
+    } catch (error: any) {
+      console.error("Login error details:", error);
+      
+      // Extract the error message from the response if available
+      const errorMessage = error.message || "Failed to login. Please check your credentials.";
+      console.error("Login error:", errorMessage);
+      
+      toast.error(errorMessage);
     }
   };
 
@@ -38,6 +46,7 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                placeholder="Enter your email"
               />
             </div>
             <div className="space-y-2">
@@ -48,6 +57,7 @@ const Login = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                placeholder="Enter your password"
               />
             </div>
             <Button type="submit" className="w-full">
