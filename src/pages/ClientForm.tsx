@@ -31,9 +31,11 @@ const ClientForm = () => {
     queryFn: async () => {
       if (!id) return null;
       console.log('Fetching client details:', id);
+      
+      // Only select the fields that exist in the clients table
       const { data, error } = await supabase
         .from('clients')
-        .select('*')
+        .select('id, name, email, phone, street, suburb, city, postcode, gender, created_at')
         .eq('id', id)
         .maybeSingle();
 
@@ -60,16 +62,29 @@ const ClientForm = () => {
   const mutation = useMutation({
     mutationFn: async (data: ClientFormData) => {
       console.log('Saving client data:', data);
+      
+      // Filter out any fields that don't exist in the clients table
+      const clientData = {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        street: data.street,
+        suburb: data.suburb,
+        city: data.city,
+        postcode: data.postcode,
+        gender: data.gender,
+      };
+
       if (isEditing) {
         const { error } = await supabase
           .from('clients')
-          .update(data)
+          .update(clientData)
           .eq('id', id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('clients')
-          .insert([data]);
+          .insert([clientData]);
         if (error) throw error;
       }
     },
