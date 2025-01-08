@@ -2,14 +2,10 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { toast } from "sonner";
-import { Check, X, Loader2 } from "lucide-react";
-import { format } from "date-fns";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { DeletionRequestsTable } from "./DeletionRequestsTable";
+import { DeletionRequestsLoading } from "./DeletionRequestsLoading";
 import { ClientDeletionRequest } from "@/types";
 
 export const DeletionRequests = () => {
@@ -57,7 +53,6 @@ export const DeletionRequests = () => {
 
       if (updateError) throw updateError;
 
-      // If approved, delete the client
       if (status === 'approved') {
         const request = requests?.find(r => r.id === id);
         if (request?.client_id) {
@@ -85,20 +80,7 @@ export const DeletionRequests = () => {
   });
 
   if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Deletion Requests</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-12 w-full" />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <DeletionRequestsLoading />;
   }
 
   if (error) {
@@ -125,77 +107,12 @@ export const DeletionRequests = () => {
       </CardHeader>
       <CardContent>
         {requests && requests.length > 0 ? (
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Requested By</TableHead>
-                  <TableHead>Reason</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {requests.map((request) => (
-                  <TableRow key={request.id}>
-                    <TableCell>{request.clients?.name || 'Unknown Client'}</TableCell>
-                    <TableCell>{request.profiles?.name || 'Unknown User'}</TableCell>
-                    <TableCell className="max-w-[200px] truncate">{request.reason}</TableCell>
-                    <TableCell>{format(new Date(request.created_at), 'PPp')}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          request.status === 'approved'
-                            ? 'success'
-                            : request.status === 'rejected'
-                            ? 'destructive'
-                            : 'default'
-                        }
-                      >
-                        {request.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {request.status === 'pending' && (
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="default"
-                            onClick={() => updateRequestMutation.mutate({
-                              id: request.id,
-                              status: 'approved',
-                              userId: request.requested_by,
-                            })}
-                            disabled={!!processingId}
-                          >
-                            {processingId === request.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Check className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => updateRequestMutation.mutate({
-                              id: request.id,
-                              status: 'rejected',
-                              userId: request.requested_by,
-                            })}
-                            disabled={!!processingId}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <DeletionRequestsTable
+            requests={requests}
+            processingId={processingId}
+            onUpdateRequest={(id, status, userId) => 
+              updateRequestMutation.mutate({ id, status, userId })}
+          />
         ) : (
           <Alert>
             <AlertDescription>
