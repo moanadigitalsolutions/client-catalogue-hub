@@ -189,6 +189,20 @@ export type Database = {
             referencedRelation: "client_documents"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "document_deletion_requests_requested_by_profiles_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_deletion_requests_reviewed_by_profiles_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       form_fields: {

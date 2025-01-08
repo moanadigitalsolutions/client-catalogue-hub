@@ -42,7 +42,7 @@ export const useDocumentDeletionRequests = () => {
               name
             )
           ),
-          profiles (
+          profiles!document_deletion_requests_requested_by_profiles_fkey (
             name
           )
         `)
