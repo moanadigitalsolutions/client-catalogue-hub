@@ -20,41 +20,59 @@ export const NewFieldForm = ({ onFieldAdded, existingFields }: NewFieldFormProps
     type: "text",
     required: false,
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAddField = async () => {
-    if (!newField.label.trim()) {
-      toast.error("Please enter a field label");
-      return;
+    try {
+      if (!newField.label.trim()) {
+        toast.error("Please enter a field label");
+        return;
+      }
+
+      setIsSubmitting(true);
+      
+      // Generate field_id from label
+      const field_id = newField.label
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_|_$/g, '');
+      
+      if (existingFields.some((field) => field.field_id === field_id)) {
+        toast.error("A field with this name already exists");
+        return;
+      }
+
+      console.log('Adding new form field:', { ...newField, field_id });
+
+      const { data, error } = await supabase
+        .from('form_fields')
+        .insert({
+          field_id,
+          label: newField.label,
+          type: newField.type,
+          required: newField.required,
+          order_index: existingFields.length,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error adding field:', error);
+        toast.error('Failed to add field');
+        return;
+      }
+
+      console.log('Form field added successfully:', data);
+      onFieldAdded(data as FormField);
+      setNewField({ label: "", field_id: "", type: "text", required: false });
+      toast.success("Field added successfully");
+    } catch (error) {
+      console.error('Error in handleAddField:', error);
+      toast.error('An unexpected error occurred');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const field_id = newField.label.toLowerCase().replace(/\s+/g, "_");
-    
-    if (existingFields.some((field) => field.field_id === field_id)) {
-      toast.error("A field with this name already exists");
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from('form_fields')
-      .insert({
-        field_id,
-        label: newField.label,
-        type: newField.type,
-        required: newField.required,
-        order_index: existingFields.length,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error adding field:', error);
-      toast.error('Failed to add field');
-      return;
-    }
-
-    onFieldAdded(data as FormField);
-    setNewField({ label: "", field_id: "", type: "text", required: false });
-    toast.success("Field added successfully");
   };
 
   return (
@@ -103,10 +121,6 @@ export const NewFieldForm = ({ onFieldAdded, existingFields }: NewFieldFormProps
               <Label htmlFor="textarea">Large Text</Label>
             </div>
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value="file" id="file" />
-              <Label htmlFor="file">File Upload</Label>
-            </div>
-            <div className="flex items-center space-x-2">
               <RadioGroupItem value="checkbox" id="checkbox" />
               <Label htmlFor="checkbox">Checkbox</Label>
             </div>
@@ -117,10 +131,6 @@ export const NewFieldForm = ({ onFieldAdded, existingFields }: NewFieldFormProps
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="select" id="select" />
               <Label htmlFor="select">Dropdown</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="rating" id="rating" />
-              <Label htmlFor="rating">Rating</Label>
             </div>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="phone" id="phone" />
@@ -150,9 +160,13 @@ export const NewFieldForm = ({ onFieldAdded, existingFields }: NewFieldFormProps
           <Label htmlFor="required">Required field</Label>
         </div>
 
-        <Button onClick={handleAddField} className="w-full">
+        <Button 
+          onClick={handleAddField} 
+          className="w-full"
+          disabled={isSubmitting}
+        >
           <PlusCircle className="mr-2 h-4 w-4" />
-          Add Field
+          {isSubmitting ? 'Adding Field...' : 'Add Field'}
         </Button>
       </div>
     </div>
