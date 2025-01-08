@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DynamicFormField } from "@/components/client/DynamicFormField";
 import { ClientFormHeader } from "@/components/client/ClientFormHeader";
 import { useFormFields } from "@/hooks/useFormFields";
+import { supabase } from "@/lib/supabase";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface ClientFormData {
   [key: string]: any;
@@ -15,6 +17,7 @@ interface ClientFormData {
 const ClientForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const isEditing = Boolean(id);
   const { fields } = useFormFields();
 
@@ -22,21 +25,66 @@ const ClientForm = () => {
     defaultValues: {},
   });
 
-  console.log("Form values:", form.watch());
+  // Fetch client data if editing
+  const { isLoading } = useQuery({
+    queryKey: ['client', id],
+    queryFn: async () => {
+      if (!id) return null;
+      console.log('Fetching client details:', id);
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-  const onSubmit = async (data: ClientFormData) => {
-    try {
-      console.log("Submitting form data:", data);
-      // TODO: Implement API call to save client data
-      toast.success(
-        `Client successfully ${isEditing ? "updated" : "created"}!`
-      );
-      navigate("/clients");
-    } catch (error) {
-      console.error("Error saving client:", error);
-      toast.error("Failed to save client. Please try again.");
-    }
+      if (error) {
+        console.error('Error fetching client:', error);
+        toast.error('Failed to fetch client details');
+        throw error;
+      }
+
+      console.log('Client details:', data);
+      form.reset(data);
+      return data;
+    },
+    enabled: isEditing,
+  });
+
+  const mutation = useMutation({
+    mutationFn: async (data: ClientFormData) => {
+      console.log('Saving client data:', data);
+      if (isEditing) {
+        const { error } = await supabase
+          .from('clients')
+          .update(data)
+          .eq('id', id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('clients')
+          .insert([data]);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      console.log('Client saved successfully');
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      toast.success(`Client ${isEditing ? 'updated' : 'created'} successfully`);
+      navigate('/clients');
+    },
+    onError: (error) => {
+      console.error('Error saving client:', error);
+      toast.error(`Failed to ${isEditing ? 'update' : 'create'} client`);
+    },
+  });
+
+  const onSubmit = (data: ClientFormData) => {
+    mutation.mutate(data);
   };
+
+  if (isLoading) {
+    return <div>Loading client details...</div>;
+  }
 
   return (
     <div className="container max-w-3xl space-y-6 p-4">
@@ -70,7 +118,7 @@ const ClientForm = () => {
                 >
                   Cancel
                 </Button>
-                <Button type="submit">
+                <Button type="submit" disabled={mutation.isPending}>
                   {isEditing ? "Update Client" : "Create Client"}
                 </Button>
               </div>

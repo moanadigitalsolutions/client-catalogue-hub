@@ -4,6 +4,9 @@ import { Search } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 import {
   Table,
   TableBody,
@@ -21,22 +24,42 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { useFormFields } from "@/hooks/useFormFields";
-import { mockClients } from "@/utils/nzData";
 
 const ClientList = () => {
   const navigate = useNavigate();
-  const { fields } = useFormFields();
   const [searchTerm, setSearchTerm] = useState("");
-  
-  console.log("Current form fields:", fields);
-  console.log("Search term:", searchTerm);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  const filteredClients = mockClients.filter(client => 
-    Object.values(client).some(value => 
-      String(value).toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
+  const { data: clients, isLoading } = useQuery({
+    queryKey: ['clients', searchTerm, currentPage],
+    queryFn: async () => {
+      console.log('Fetching clients from Supabase...');
+      let query = supabase
+        .from('clients')
+        .select('*')
+        .range((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage - 1);
+
+      if (searchTerm) {
+        query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching clients:', error);
+        toast.error('Failed to fetch clients');
+        throw error;
+      }
+
+      console.log('Fetched clients:', data);
+      return data;
+    },
+  });
+
+  if (isLoading) {
+    return <div>Loading clients...</div>;
+  }
 
   return (
     <div className="space-y-4 p-8">
@@ -73,7 +96,7 @@ const ClientList = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredClients.map((client) => (
+                {clients?.map((client) => (
                   <TableRow key={client.id}>
                     <TableCell>{client.name}</TableCell>
                     <TableCell>{client.email}</TableCell>
@@ -100,24 +123,19 @@ const ClientList = () => {
             <Pagination>
               <PaginationContent>
                 <PaginationItem>
-                  <PaginationPrevious href="#" />
+                  <PaginationPrevious 
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    className="cursor-pointer"
+                  />
                 </PaginationItem>
                 <PaginationItem>
-                  <PaginationLink href="#" isActive>
-                    1
-                  </PaginationLink>
+                  <PaginationLink isActive>{currentPage}</PaginationLink>
                 </PaginationItem>
                 <PaginationItem>
-                  <PaginationLink href="#">2</PaginationLink>
-                </PaginationItem>
-                <PaginationItem>
-                  <PaginationLink href="#">3</PaginationLink>
-                </PaginationItem>
-                <PaginationItem>
-                  <PaginationEllipsis />
-                </PaginationItem>
-                <PaginationItem>
-                  <PaginationNext href="#" />
+                  <PaginationNext 
+                    onClick={() => setCurrentPage(p => p + 1)}
+                    className="cursor-pointer"
+                  />
                 </PaginationItem>
               </PaginationContent>
             </Pagination>
