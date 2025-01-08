@@ -22,40 +22,21 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { useFormFields } from "@/hooks/useFormFields";
+import { mockClients } from "@/utils/nzData";
 
 const ClientList = () => {
   const navigate = useNavigate();
   const { fields } = useFormFields();
   const [searchTerm, setSearchTerm] = useState("");
   
-  // Temporary mock data - replace with actual API data
-  const mockClients = [
-    {
-      id: "1",
-      firstName: "John",
-      lastName: "Doe",
-      email: "john@example.com",
-      phone: "123-456-7890",
-      street: "123 Main St",
-      suburb: "Downtown",
-      city: "Metropolis",
-      postCode: "12345",
-    },
-    {
-      id: "2",
-      firstName: "Jane",
-      lastName: "Smith",
-      email: "jane@example.com",
-      phone: "098-765-4321",
-      street: "456 Oak Ave",
-      suburb: "Uptown",
-      city: "Metropolis",
-      postCode: "12346",
-    },
-  ];
-
   console.log("Current form fields:", fields);
   console.log("Search term:", searchTerm);
+
+  const filteredClients = mockClients.filter(client => 
+    Object.values(client).some(value => 
+      String(value).toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
 
   return (
     <div className="space-y-4 p-8">
@@ -92,15 +73,13 @@ const ClientList = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockClients.map((client) => (
+                {filteredClients.map((client) => (
                   <TableRow key={client.id}>
-                    <TableCell>
-                      {client.firstName} {client.lastName}
-                    </TableCell>
+                    <TableCell>{client.name}</TableCell>
                     <TableCell>{client.email}</TableCell>
                     <TableCell>{client.phone}</TableCell>
                     <TableCell>
-                      {client.street}, {client.suburb}, {client.city} {client.postCode}
+                      {client.street}, {client.suburb}, {client.city} {client.postcode}
                     </TableCell>
                     <TableCell>
                       <Button
