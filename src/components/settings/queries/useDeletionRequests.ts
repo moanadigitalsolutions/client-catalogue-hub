@@ -46,7 +46,6 @@ export const useDocumentDeletionRequests = () => {
             name
           )
         `)
-        .eq('status', 'pending')  // Only fetch pending requests
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -61,8 +60,15 @@ export const useDocumentDeletionRequests = () => {
         );
         
         if (existingIndex === -1) {
-          acc.push(request);
-        } else if (new Date(request.created_at) > new Date(acc[existingIndex].created_at)) {
+          // Only add pending requests
+          if (request.status === 'pending') {
+            acc.push(request);
+          }
+        } else if (
+          new Date(request.created_at) > new Date(acc[existingIndex].created_at) &&
+          request.status === 'pending'
+        ) {
+          // Replace with newer pending request
           acc[existingIndex] = request;
         }
         
