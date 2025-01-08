@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 
 interface AuthContextType {
@@ -16,20 +16,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Initialize auth state from localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        // If we have a user and we're on the login page, redirect to dashboard
+        if (location.pathname === '/login') {
+          navigate('/dashboard');
+        }
       } catch (error) {
         console.error('Error parsing stored user:', error);
         localStorage.removeItem('user');
       }
     }
     setLoading(false);
-  }, []);
+  }, [navigate, location.pathname]);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -50,7 +56,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(mockUser);
         localStorage.setItem('user', JSON.stringify(mockUser));
         toast.success("Logged in successfully");
-        navigate('/dashboard');
+        
+        // Get the intended destination from location state, or default to dashboard
+        const from = location.state?.from?.pathname || '/dashboard';
+        console.log("AuthContext: Redirecting to:", from);
+        navigate(from, { replace: true });
         return;
       }
       
