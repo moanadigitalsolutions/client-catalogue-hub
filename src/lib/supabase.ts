@@ -13,54 +13,23 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
-// Function to check database connection and create tables if they don't exist
+// Function to check database connection and verify table existence
 export const initializeDatabase = async () => {
-  console.log('Checking database connection and tables...');
+  console.log('Checking database connection...');
   
   try {
     // Test the connection by attempting to query the clients table
-    const { error: queryError } = await supabase
+    const { data, error } = await supabase
       .from('clients')
-      .select('id')
-      .limit(1);
+      .select('count(*)')
+      .single();
 
-    if (queryError) {
-      console.log('Creating clients table as it does not exist...');
-      
-      // Create the clients table directly
-      const { error: createError } = await supabase.rpc('exec', {
-        sql: `
-          CREATE TABLE IF NOT EXISTS public.clients (
-            id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-            name TEXT NOT NULL,
-            email TEXT,
-            phone TEXT,
-            street TEXT,
-            suburb TEXT,
-            city TEXT,
-            postcode TEXT,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
-          );
-          
-          -- Enable Row Level Security
-          ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
-          
-          -- Create policy to allow all operations for authenticated users
-          CREATE POLICY "Allow full access to authenticated users" ON public.clients
-            FOR ALL USING (auth.role() = 'authenticated');
-        `
-      });
-
-      if (createError) {
-        console.error('Error creating clients table:', createError);
-        throw createError;
-      }
-      
-      console.log('Clients table created successfully');
-    } else {
-      console.log('Successfully connected to Supabase and verified clients table exists');
+    if (error) {
+      console.error('Error querying clients table:', error);
+      throw error;
     }
 
+    console.log('Successfully connected to database and verified clients table exists');
     return true;
   } catch (error) {
     console.error('Database initialization error:', error);
@@ -71,7 +40,7 @@ export const initializeDatabase = async () => {
 // Initialize the database when the app starts
 initializeDatabase()
   .then(() => {
-    console.log('Database initialization completed');
+    console.log('Database initialization completed successfully');
   })
   .catch((error) => {
     console.error('Failed to initialize database:', error);

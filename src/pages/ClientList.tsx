@@ -35,41 +35,30 @@ const ClientList = () => {
     queryFn: async () => {
       console.log('Fetching clients from Supabase...');
       try {
-        // First check if the table exists
-        const { data: tables } = await supabase
-          .from('information_schema.tables')
-          .select('table_name')
-          .eq('table_schema', 'public')
-          .eq('table_name', 'clients');
-
-        if (!tables || tables.length === 0) {
-          console.log('Clients table does not exist');
-          toast.error('Database table not found. Please ensure the clients table is created.');
-          return [];
-        }
-
         let query = supabase
           .from('clients')
-          .select('*')
-          .range((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage - 1);
+          .select('*');
 
         if (searchTerm) {
           query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
         }
 
+        // Add pagination
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = start + itemsPerPage - 1;
+        query = query.range(start, end);
+
         const { data, error } = await query;
 
         if (error) {
           console.error('Error fetching clients:', error);
-          toast.error('Failed to fetch clients');
           throw error;
         }
 
-        console.log('Fetched clients:', data);
+        console.log('Successfully fetched clients:', data?.length);
         return data || [];
       } catch (err) {
         console.error('Error in query:', err);
-        toast.error('Failed to fetch clients. Please check the database connection.');
         throw err;
       }
     },
@@ -77,6 +66,7 @@ const ClientList = () => {
   });
 
   if (error) {
+    console.error('Error loading clients:', error);
     return (
       <div className="p-8">
         <div className="flex justify-between items-center mb-6">
@@ -86,7 +76,7 @@ const ClientList = () => {
         <Card>
           <CardContent className="p-6">
             <div className="text-center text-red-500">
-              Error loading clients. Please ensure the database is properly configured.
+              Error loading clients. Please try again later.
             </div>
           </CardContent>
         </Card>
@@ -188,5 +178,3 @@ const ClientList = () => {
     </div>
   );
 };
-
-export default ClientList;
