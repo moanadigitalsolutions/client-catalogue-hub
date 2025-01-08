@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { PlusCircle, Trash2 } from "lucide-react";
 
-type FieldType = "text" | "number" | "date" | "email";
+type FieldType = "text" | "number" | "date" | "email" | "textarea" | "file";
 
 interface FormField {
   id: string;
@@ -135,6 +135,14 @@ const Settings = () => {
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="email" id="email" />
                       <Label htmlFor="email">Email</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="textarea" id="textarea" />
+                      <Label htmlFor="textarea">Large Text</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="file" id="file" />
+                      <Label htmlFor="file">File Upload</Label>
                     </div>
                   </RadioGroup>
                 </div>
