@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Settings as SettingsIcon, UserPlus } from "lucide-react";
+import { LayoutDashboard, Users, Settings as SettingsIcon, UserPlus, FileText } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -26,6 +26,11 @@ const items = [
     title: "Client List",
     url: "/clients",
     icon: Users,
+  },
+  {
+    title: "Reports",
+    url: "/reports",
+    icon: FileText,
   },
   {
     title: "Settings",

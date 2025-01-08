@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard";
 import ClientForm from "./pages/ClientForm";
 import ClientList from "./pages/ClientList";
 import Settings from "./pages/Settings";
+import Reports from "./pages/Reports";
 import Login from "./pages/Login";
 import Layout from "./components/Layout";
 
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="clients/new" element={<ClientForm />} />
             <Route path="clients" element={<ClientList />} />
             <Route path="clients/:id" element={<ClientForm />} />
+            <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<Settings />} />
           </Route>
         </Routes>
