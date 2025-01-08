@@ -5,12 +5,24 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
 
+  console.log("ProtectedRoute: Auth state", { user, loading, currentPath: location.pathname });
+
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+      </div>
+    );
   }
 
-  if (!user) {
+  if (!user && location.pathname !== "/login") {
+    console.log("ProtectedRoute: Redirecting to login");
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (user && location.pathname === "/login") {
+    console.log("ProtectedRoute: Redirecting to dashboard");
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
