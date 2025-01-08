@@ -19,6 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 interface Document {
   id: string;
@@ -36,6 +37,8 @@ interface DocumentListProps {
 export const DocumentList = ({ documents, formatFileSize }: DocumentListProps) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
 
   const deleteMutation = useMutation({
     mutationFn: async (documentId: string) => {
@@ -59,6 +62,8 @@ export const DocumentList = ({ documents, formatFileSize }: DocumentListProps) =
     onSuccess: () => {
       toast.success('Deletion request submitted');
       queryClient.invalidateQueries({ queryKey: ['clientDocuments'] });
+      setDialogOpen(false); // Close the dialog on success
+      setSelectedDocId(null); // Reset selected document
     },
     onError: (error) => {
       console.error('Delete request error:', error);
@@ -93,12 +98,16 @@ export const DocumentList = ({ documents, formatFileSize }: DocumentListProps) =
                 {new Date(doc.created_at).toLocaleDateString()}
               </TableCell>
               <TableCell>
-                <Dialog>
+                <Dialog open={dialogOpen && selectedDocId === doc.id} onOpenChange={(open) => {
+                  setDialogOpen(open);
+                  if (!open) setSelectedDocId(null);
+                }}>
                   <DialogTrigger asChild>
                     <Button
                       variant="ghost"
                       size="icon"
                       className="text-destructive"
+                      onClick={() => setSelectedDocId(doc.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
