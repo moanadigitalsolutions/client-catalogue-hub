@@ -5,25 +5,30 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { AuthError } from "@supabase/supabase-js";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const { signIn } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login component: Attempting login with email:", email);
+    setIsLoading(true);
     
     try {
+      console.log("Login component: Attempting login with email:", email);
       await signIn(email, password);
-      console.log("Login component: Login successful");
       toast.success("Logged in successfully");
-    } catch (error: any) {
-      console.error("Login component: Login error details:", error);
-      const errorMessage = error.message || "Failed to login. Please check your credentials.";
-      console.error("Login component: Login error:", errorMessage);
+    } catch (error) {
+      console.error("Login component: Login error:", error);
+      const errorMessage = error instanceof AuthError 
+        ? error.message 
+        : "Failed to login. Please try again.";
       toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -44,6 +49,7 @@ const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="Enter your email"
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -55,10 +61,11 @@ const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="Enter your password"
+                disabled={isLoading}
               />
             </div>
-            <Button type="submit" className="w-full">
-              Login
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Logging in..." : "Login"}
             </Button>
           </form>
         </CardContent>

@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { User } from '@supabase/supabase-js';
+import { User, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface AuthContextType {
   user: User | null;
@@ -34,39 +35,56 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    console.log("AuthContext: Attempting sign in");
-    
-    // Handle temporary admin login
-    if (email === "admin@temp.com" && password === "admin123") {
-      console.log("AuthContext: Using temporary admin login");
-      const mockUser = {
-        id: 'temp-admin',
-        email: 'admin@temp.com',
-        aud: 'authenticated',
-        created_at: new Date().toISOString(),
-        role: 'authenticated',
-      } as User;
+    try {
+      console.log("AuthContext: Attempting sign in");
       
-      setUser(mockUser);
-      console.log("AuthContext: Mock user set, navigating to dashboard");
-      navigate('/dashboard');
-      return;
-    }
+      // Handle temporary admin login
+      if (email === "admin@temp.com" && password === "admin123") {
+        console.log("AuthContext: Using temporary admin login");
+        const mockUser = {
+          id: 'temp-admin',
+          email: 'admin@temp.com',
+          aud: 'authenticated',
+          created_at: new Date().toISOString(),
+          role: 'authenticated',
+        } as User;
+        
+        setUser(mockUser);
+        console.log("AuthContext: Mock user set, navigating to dashboard");
+        navigate('/dashboard');
+        return;
+      }
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    
-    if (error) throw error;
-    navigate('/dashboard');
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        console.error("AuthContext: Sign in error:", error.message);
+        throw error;
+      }
+
+      if (data?.user) {
+        console.log("AuthContext: Sign in successful");
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error("AuthContext: Sign in error:", error);
+      throw error;
+    }
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-    setUser(null);
-    navigate('/login');
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      setUser(null);
+      navigate('/login');
+    } catch (error) {
+      console.error("AuthContext: Sign out error:", error);
+      throw error;
+    }
   };
 
   return (
