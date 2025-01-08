@@ -19,10 +19,9 @@ export const initializeDatabase = async () => {
   
   try {
     // Test the connection by attempting to query the clients table
-    const { data, error } = await supabase
+    const { count, error } = await supabase
       .from('clients')
-      .select('count(*)')
-      .single();
+      .select('*', { count: 'exact', head: true });
 
     if (error) {
       console.error('Error querying clients table:', error);
@@ -30,6 +29,7 @@ export const initializeDatabase = async () => {
     }
 
     console.log('Successfully connected to database and verified clients table exists');
+    console.log(`Number of clients in database: ${count}`);
     return true;
   } catch (error) {
     console.error('Database initialization error:', error);
