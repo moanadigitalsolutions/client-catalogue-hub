@@ -1,27 +1,28 @@
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { FormField } from "@/types";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 export const useFormFields = () => {
-  const [fields, setFields] = useState<FormField[]>([
-    { id: "name", label: "Full Name", type: "text", required: true },
-    { id: "email", label: "Email", type: "email", required: true },
-    { id: "phone", label: "Phone Number", type: "phone", required: false },
-    { id: "street", label: "Street Address", type: "text", required: false },
-    { id: "suburb", label: "Suburb", type: "text", required: false },
-    { id: "city", label: "City", type: "text", required: false },
-    { id: "postcode", label: "Post Code", type: "text", required: false },
-    { id: "birth_date", label: "Date of Birth", type: "date", required: false },
-    { id: "preferred_contact", label: "Preferred Contact Method", type: "select", required: false, options: ["Email", "Phone", "Mail"] },
-    { id: "newsletter", label: "Subscribe to Newsletter", type: "checkbox", required: false },
-    { id: "notes", label: "Additional Notes", type: "textarea", required: false },
-  ]);
+  const { data: fields = [] } = useQuery({
+    queryKey: ['formFields'],
+    queryFn: async () => {
+      console.log('Fetching form fields configuration...');
+      const { data, error } = await supabase
+        .from('form_fields')
+        .select('*')
+        .order('order_index');
 
-  // TODO: In a real application, this would fetch from an API or local storage
-  useEffect(() => {
-    console.log("Loading form fields configuration");
-    // This is where you would load the fields configuration
-    // For now, we're using the default fields
-  }, []);
+      if (error) {
+        console.error('Error fetching form fields:', error);
+        toast.error('Failed to load form fields');
+        throw error;
+      }
+
+      console.log('Form fields configuration loaded:', data);
+      return data as FormField[];
+    },
+  });
 
   return { fields };
 };

@@ -48,6 +48,42 @@ export type Database = {
         }
         Relationships: []
       }
+      form_fields: {
+        Row: {
+          created_at: string
+          field_id: string
+          id: string
+          label: string
+          options: string[] | null
+          order_index: number
+          required: boolean | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          field_id: string
+          id?: string
+          label: string
+          options?: string[] | null
+          order_index?: number
+          required?: boolean | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          field_id?: string
+          id?: string
+          label?: string
+          options?: string[] | null
+          order_index?: number
+          required?: boolean | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
