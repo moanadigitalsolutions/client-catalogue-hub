@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 export const useDashboardMetrics = () => {
   return useQuery({
@@ -42,6 +42,12 @@ export const useDashboardMetrics = () => {
         return acc;
       }, []);
 
+      const genderData = totalClients.reduce((acc: { male: number; female: number }, client) => {
+        if (client.gender?.toLowerCase() === 'male') acc.male++;
+        if (client.gender?.toLowerCase() === 'female') acc.female++;
+        return acc;
+      }, { male: 0, female: 0 });
+
       const monthlyData = Array.from({ length: 5 }, (_, i) => {
         const date = new Date();
         date.setMonth(date.getMonth() - i);
@@ -64,6 +70,7 @@ export const useDashboardMetrics = () => {
         newClientsThisMonth: newClients.length,
         activeClients: totalClients.length,
         cityData,
+        genderData,
         monthlyData
       };
     },

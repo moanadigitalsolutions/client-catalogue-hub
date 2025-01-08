@@ -1,44 +1,39 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
-import { PieChart, Pie, Cell } from "recharts";
-
-interface CityData {
-  name: string;
-  value: number;
-}
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 
 interface ClientsByCityChartProps {
-  data: CityData[];
+  data: Array<{ name: string; value: number }>;
+  className?: string;
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
-const ClientsByCityChart = ({ data }: ClientsByCityChartProps) => {
+const ClientsByCityChart = ({ data, className }: ClientsByCityChartProps) => {
   return (
-    <Card className="col-span-2 lg:col-span-1">
+    <Card className={className}>
       <CardHeader>
         <CardTitle>Clients by City</CardTitle>
       </CardHeader>
       <CardContent>
-        <ChartContainer className="h-[300px] w-full" config={{}}>
-          <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+        <ResponsiveContainer width="100%" height={250}>
+          <PieChart>
             <Pie
               data={data}
               cx="50%"
               cy="50%"
-              labelLine={false}
-              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-              outerRadius={100}
+              outerRadius={80}
               fill="#8884d8"
               dataKey="value"
+              label
             >
               {data.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
-            <ChartTooltip />
+            <Tooltip />
+            <Legend />
           </PieChart>
-        </ChartContainer>
+        </ResponsiveContainer>
       </CardContent>
     </Card>
   );

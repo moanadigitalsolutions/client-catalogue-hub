@@ -14,6 +14,7 @@ export type Database = {
           city: string | null
           created_at: string
           email: string | null
+          gender: string | null
           id: string
           name: string
           phone: string | null
@@ -25,6 +26,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           email?: string | null
+          gender?: string | null
           id?: string
           name: string
           phone?: string | null
@@ -36,6 +38,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           email?: string | null
+          gender?: string | null
           id?: string
           name?: string
           phone?: string | null
@@ -66,6 +69,27 @@ export type Database = {
           id?: string
           name?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      user_activities: {
+        Row: {
+          activity_type: string
+          created_at: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          id?: string
+          user_id?: string | null
         }
         Relationships: []
       }

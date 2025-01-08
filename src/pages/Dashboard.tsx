@@ -3,6 +3,8 @@ import { Plus } from "lucide-react";
 import DashboardMetricCard from "@/components/dashboard/DashboardMetricCard";
 import MonthlyGrowthChart from "@/components/dashboard/MonthlyGrowthChart";
 import ClientsByCityChart from "@/components/dashboard/ClientsByCityChart";
+import UserBadge from "@/components/dashboard/UserBadge";
+import UserActivities from "@/components/dashboard/UserActivities";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { useState } from "react";
 
@@ -17,7 +19,10 @@ const Dashboard = () => {
   return (
     <div className="space-y-6 p-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <UserBadge />
+        </div>
         <Button onClick={() => setShowAddWidget(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Add Widget
@@ -42,9 +47,39 @@ const Dashboard = () => {
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <MonthlyGrowthChart data={clientsData?.monthlyData || []} />
-        <ClientsByCityChart data={clientsData?.cityData || []} />
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="space-y-6">
+          <MonthlyGrowthChart 
+            data={clientsData?.monthlyData || []} 
+            className="h-[300px] p-4"
+          />
+          <UserActivities />
+        </div>
+        <div className="space-y-6">
+          <ClientsByCityChart 
+            data={clientsData?.cityData || []} 
+            className="h-[300px] p-4"
+          />
+          {clientsData?.genderData && (
+            <Card className="p-4">
+              <CardHeader>
+                <CardTitle>Gender Distribution</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-around text-center">
+                  <div>
+                    <div className="text-2xl font-bold">{clientsData.genderData.male || 0}</div>
+                    <div className="text-sm text-muted-foreground">Male</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold">{clientsData.genderData.female || 0}</div>
+                    <div className="text-sm text-muted-foreground">Female</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );
