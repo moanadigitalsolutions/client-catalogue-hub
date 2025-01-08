@@ -5,15 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Download, Upload, FileDown } from "lucide-react";
-import { mockClients } from "@/utils/nzData";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/lib/supabase";
+import * as XLSX from 'xlsx';
+import { mockClients } from "@/utils/nzData";
 
 export const DataImportExport = () => {
   const [importFile, setImportFile] = useState<File | null>(null);
 
   const handleExport = () => {
     try {
+      // Keep JSON export for backward compatibility
       const dataStr = JSON.stringify(mockClients, null, 2);
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
       const url = window.URL.createObjectURL(dataBlob);
@@ -38,14 +40,27 @@ export const DataImportExport = () => {
     }
 
     try {
-      const text = await importFile.text();
-      const data = JSON.parse(text);
+      const fileExt = importFile.name.split('.').pop()?.toLowerCase();
+      let data;
+
+      if (fileExt === 'xlsx' || fileExt === 'xls') {
+        const buffer = await importFile.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        data = XLSX.utils.sheet_to_json(firstSheet);
+      } else if (fileExt === 'json') {
+        const text = await importFile.text();
+        data = JSON.parse(text);
+      } else {
+        throw new Error('Unsupported file format');
+      }
+
       console.log("Imported data:", data);
       toast.success("Data imported successfully");
       setImportFile(null);
     } catch (error) {
       console.error("Import error:", error);
-      toast.error("Failed to import data. Please ensure the file is in the correct JSON format");
+      toast.error("Failed to import data. Please ensure the file is in the correct format");
     }
   };
 
@@ -59,23 +74,35 @@ export const DataImportExport = () => {
 
       if (error) throw error;
 
-      // Create a template object with empty values
+      // Create a template object with empty values but keep headers
       const template = clients && clients[0] ? 
         Object.keys(clients[0]).reduce((acc, key) => {
           acc[key] = key === 'id' ? 'auto-generated' : '';
           return acc;
         }, {} as Record<string, string>) : {};
 
-      const templateStr = JSON.stringify([template], null, 2);
-      const blob = new Blob([templateStr], { type: 'application/json' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'client-template.json';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet([template], {
+        header: Object.keys(template),
+      });
+
+      // Add some styling to the header row
+      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:Z1');
+      for (let col = range.s.c; col <= range.e.c; col++) {
+        const addr = XLSX.utils.encode_cell({ r: 0, c: col });
+        if (!ws[addr]) continue;
+        ws[addr].s = {
+          fill: { fgColor: { rgb: "FFFF00" } },
+          font: { bold: true }
+        };
+      }
+
+      // Add the worksheet to the workbook
+      XLSX.utils.book_append_sheet(wb, ws, "Template");
+
+      // Generate Excel file
+      XLSX.writeFile(wb, 'client-template.xlsx');
       toast.success("Template downloaded successfully");
     } catch (error) {
       console.error("Template download error:", error);
@@ -92,10 +119,11 @@ export const DataImportExport = () => {
         <Alert>
           <AlertDescription>
             <ul className="list-disc pl-4 space-y-1">
-              <li>Only JSON files are supported (.json)</li>
-              <li>Download the template first to see the required format</li>
+              <li>Excel files (.xlsx, .xls) and JSON files are supported</li>
+              <li>Download the Excel template to see the required format</li>
               <li>The ID field will be auto-generated for new records</li>
               <li>Make sure all required fields are filled</li>
+              <li>Do not modify the header row in the Excel template</li>
             </ul>
           </AlertDescription>
         </Alert>
@@ -107,7 +135,7 @@ export const DataImportExport = () => {
               <Input
                 id="import"
                 type="file"
-                accept=".json"
+                accept=".xlsx,.xls,.json"
                 onChange={(e) => setImportFile(e.target.files?.[0] || null)}
                 className="flex-1"
               />
@@ -127,7 +155,7 @@ export const DataImportExport = () => {
             <div className="flex gap-2">
               <Button onClick={handleTemplateDownload} variant="outline">
                 <FileDown className="mr-2 h-4 w-4" />
-                Download Template
+                Download Excel Template
               </Button>
               <Button onClick={handleExport} variant="secondary">
                 <Download className="mr-2 h-4 w-4" />
