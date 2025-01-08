@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -14,8 +14,22 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  // Initialize auth state from localStorage
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
+        localStorage.removeItem('user');
+      }
+    }
+    setLoading(false);
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -34,12 +48,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         } as User;
         
         setUser(mockUser);
+        localStorage.setItem('user', JSON.stringify(mockUser));
         toast.success("Logged in successfully");
         navigate('/dashboard');
         return;
       }
       
-      // If credentials don't match, show error
       console.error("AuthContext: Invalid credentials");
       toast.error("Invalid email or password");
       
@@ -54,6 +68,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     try {
       setLoading(true);
+      localStorage.removeItem('user');
       setUser(null);
       navigate('/login');
       toast.success("Logged out successfully");
