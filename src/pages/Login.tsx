@@ -15,6 +15,15 @@ const Login = () => {
     e.preventDefault();
     console.log("Attempting login with email:", email);
     
+    // Temporary dummy admin login
+    if (email === "admin@temp.com" && password === "admin123") {
+      console.log("Using temporary admin login");
+      toast.success("Logged in as temporary admin");
+      // Navigate to dashboard directly
+      window.location.href = "/dashboard";
+      return;
+    }
+    
     try {
       await signIn(email, password);
       console.log("Login successful");
@@ -64,6 +73,11 @@ const Login = () => {
               Login
             </Button>
           </form>
+          <div className="mt-4 text-sm text-center text-gray-500">
+            Temporary Admin Login:<br />
+            Email: admin@temp.com<br />
+            Password: admin123
+          </div>
         </CardContent>
       </Card>
     </div>
