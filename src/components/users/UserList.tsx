@@ -4,14 +4,16 @@ import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { UserRoleSelect } from "./UserRoleSelect";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const UserList = () => {
   const [loading, setLoading] = useState(false);
+  const { user: currentUser } = useAuth();
 
   const { data: users, isLoading, error, refetch } = useQuery({
     queryKey: ['users'],
@@ -41,20 +43,40 @@ export const UserList = () => {
       // Combine the data
       const combinedData = profiles.map(profile => ({
         ...profile,
-        user_roles: [
-          {
-            role: userRoles.find(role => role.user_id === profile.id)?.role || 'employee'
-          }
-        ]
+        role: userRoles.find(role => role.user_id === profile.id)?.role || 'employee'
       }));
 
       return combinedData || [];
     },
   });
 
-  const handleDeleteUser = async (userId: string) => {
+  const handleDeleteUser = async (userId: string, userRole: string) => {
     try {
       setLoading(true);
+
+      // Check if trying to delete own account
+      if (userId === currentUser?.id) {
+        toast.error("You cannot delete your own account");
+        return;
+      }
+
+      // First try to delete the user role (this will trigger our prevent_delete_last_admin trigger)
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
+
+      if (roleError) {
+        if (roleError.message.includes('Cannot delete the last admin user')) {
+          toast.error('Cannot delete the last admin user');
+        } else {
+          console.error('Error deleting user role:', roleError);
+          toast.error('Failed to delete user');
+        }
+        return;
+      }
+
+      // If role deletion succeeded, proceed with auth user deletion
       const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
 
       if (deleteError) {
@@ -119,12 +141,17 @@ export const UserList = () => {
             <TableBody>
               {users?.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell>{user.name}</TableCell>
+                  <TableCell className="flex items-center gap-2">
+                    {user.role === 'admin' && (
+                      <Shield className="h-4 w-4 text-blue-500" />
+                    )}
+                    {user.name}
+                  </TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
                     <UserRoleSelect 
                       userId={user.id} 
-                      currentRole={user.user_roles?.[0]?.role || 'employee'} 
+                      currentRole={user.role} 
                       onRoleChange={() => refetch()}
                     />
                   </TableCell>
@@ -132,8 +159,8 @@ export const UserList = () => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleDeleteUser(user.id)}
-                      disabled={loading}
+                      onClick={() => handleDeleteUser(user.id, user.role)}
+                      disabled={loading || user.id === currentUser?.id}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
