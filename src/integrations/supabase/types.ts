@@ -60,6 +60,7 @@ export type Database = {
           name: string
           phone: string | null
           postcode: string | null
+          qualification: string | null
           street: string | null
           suburb: string | null
         }
@@ -72,6 +73,7 @@ export type Database = {
           name: string
           phone?: string | null
           postcode?: string | null
+          qualification?: string | null
           street?: string | null
           suburb?: string | null
         }
@@ -84,6 +86,7 @@ export type Database = {
           name?: string
           phone?: string | null
           postcode?: string | null
+          qualification?: string | null
           street?: string | null
           suburb?: string | null
         }
