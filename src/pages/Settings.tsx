@@ -7,7 +7,8 @@ import { DataImportExport } from "@/components/settings/DataImportExport";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const Settings = () => {
   const { user } = useAuth();
@@ -45,6 +46,8 @@ const Settings = () => {
     return (
       <div className="container space-y-8 p-4">
         <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
           <AlertDescription>
             Error loading user role. Please try again later.
           </AlertDescription>
@@ -53,10 +56,21 @@ const Settings = () => {
     );
   }
 
-  // Redirect non-admin users
+  // If user is not an admin, show access denied message and redirect
   if (userRole !== 'admin') {
     console.log('User is not admin, redirecting to dashboard');
-    return <Navigate to="/dashboard" replace />;
+    return (
+      <div className="container space-y-8 p-4">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Access Denied</AlertTitle>
+          <AlertDescription>
+            You need administrator privileges to access this page.
+          </AlertDescription>
+        </Alert>
+        <Navigate to="/dashboard" replace />
+      </div>
+    );
   }
 
   return (
