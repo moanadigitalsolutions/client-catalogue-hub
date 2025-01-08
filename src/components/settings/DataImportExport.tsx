@@ -4,8 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Download, Upload } from "lucide-react";
+import { Download, Upload, FileDown } from "lucide-react";
 import { mockClients } from "@/utils/nzData";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { supabase } from "@/lib/supabase";
 
 export const DataImportExport = () => {
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -43,7 +45,41 @@ export const DataImportExport = () => {
       setImportFile(null);
     } catch (error) {
       console.error("Import error:", error);
-      toast.error("Failed to import data");
+      toast.error("Failed to import data. Please ensure the file is in the correct JSON format");
+    }
+  };
+
+  const handleTemplateDownload = async () => {
+    try {
+      // Fetch the current table structure from the database
+      const { data: clients, error } = await supabase
+        .from('clients')
+        .select('*')
+        .limit(1);
+
+      if (error) throw error;
+
+      // Create a template object with empty values
+      const template = clients && clients[0] ? 
+        Object.keys(clients[0]).reduce((acc, key) => {
+          acc[key] = key === 'id' ? 'auto-generated' : '';
+          return acc;
+        }, {} as Record<string, string>) : {};
+
+      const templateStr = JSON.stringify([template], null, 2);
+      const blob = new Blob([templateStr], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'client-template.json';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success("Template downloaded successfully");
+    } catch (error) {
+      console.error("Template download error:", error);
+      toast.error("Failed to download template");
     }
   };
 
@@ -53,6 +89,17 @@ export const DataImportExport = () => {
         <CardTitle>Data Import/Export</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        <Alert>
+          <AlertDescription>
+            <ul className="list-disc pl-4 space-y-1">
+              <li>Only JSON files are supported (.json)</li>
+              <li>Download the template first to see the required format</li>
+              <li>The ID field will be auto-generated for new records</li>
+              <li>Make sure all required fields are filled</li>
+            </ul>
+          </AlertDescription>
+        </Alert>
+
         <div className="space-y-4">
           <div className="grid gap-2">
             <Label htmlFor="import">Import Data</Label>
@@ -76,11 +123,17 @@ export const DataImportExport = () => {
           </div>
 
           <div className="grid gap-2">
-            <Label>Export Data</Label>
-            <Button onClick={handleExport} variant="secondary">
-              <Download className="mr-2 h-4 w-4" />
-              Export All Data
-            </Button>
+            <Label>Export & Templates</Label>
+            <div className="flex gap-2">
+              <Button onClick={handleTemplateDownload} variant="outline">
+                <FileDown className="mr-2 h-4 w-4" />
+                Download Template
+              </Button>
+              <Button onClick={handleExport} variant="secondary">
+                <Download className="mr-2 h-4 w-4" />
+                Export All Data
+              </Button>
+            </div>
           </div>
         </div>
       </CardContent>
