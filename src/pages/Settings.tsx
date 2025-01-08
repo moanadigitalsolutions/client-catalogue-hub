@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FormFieldsSettings } from "@/components/settings/FormFieldsSettings";
 import { UserManagement } from "@/components/settings/UserManagement";
 import { DataImportExport } from "@/components/settings/DataImportExport";
+import { DeletionRequests } from "@/components/settings/DeletionRequests";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,7 +29,7 @@ const Settings = () => {
         throw error;
       }
 
-      console.log('User role data:', data);
+      console.log('User role:', data?.role);
       return data?.role || null;
     },
   });
@@ -80,10 +81,11 @@ const Settings = () => {
       </div>
       
       <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="users">User Management</TabsTrigger>
           <TabsTrigger value="forms">Form Fields</TabsTrigger>
           <TabsTrigger value="data">Data Management</TabsTrigger>
+          <TabsTrigger value="requests">Deletion Requests</TabsTrigger>
         </TabsList>
         
         <TabsContent value="users" className="mt-6">
@@ -96,6 +98,10 @@ const Settings = () => {
         
         <TabsContent value="data" className="mt-6">
           <DataImportExport />
+        </TabsContent>
+
+        <TabsContent value="requests" className="mt-6">
+          <DeletionRequests />
         </TabsContent>
       </Tabs>
     </div>
