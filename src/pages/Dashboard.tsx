@@ -1,8 +1,8 @@
-import { QuickActions } from "@/components/QuickActions";
-import { DashboardMetricCard } from "@/components/dashboard/DashboardMetricCard";
-import { ClientsByCityChart } from "@/components/dashboard/ClientsByCityChart";
-import { MonthlyGrowthChart } from "@/components/dashboard/MonthlyGrowthChart";
-import { UserActivities } from "@/components/dashboard/UserActivities";
+import QuickActions from "@/components/QuickActions";
+import DashboardMetricCard from "@/components/dashboard/DashboardMetricCard";
+import ClientsByCityChart from "@/components/dashboard/ClientsByCityChart";
+import MonthlyGrowthChart from "@/components/dashboard/MonthlyGrowthChart";
+import UserActivities from "@/components/dashboard/UserActivities";
 
 const Dashboard = () => {
   return (
