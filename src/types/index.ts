@@ -29,3 +29,16 @@ export interface User {
 }
 
 export type UserRole = "admin" | "employee";
+
+export type DeletionRequestStatus = "pending" | "approved" | "rejected";
+
+export interface ClientDeletionRequest {
+  id: string;
+  client_id: string;
+  requested_by: string;
+  reviewed_by?: string;
+  status: DeletionRequestStatus;
+  reason: string;
+  created_at: string;
+  updated_at: string;
+}

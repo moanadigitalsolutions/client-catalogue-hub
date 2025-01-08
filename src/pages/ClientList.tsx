@@ -22,6 +22,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { DeleteClientDialog } from "@/components/client/DeleteClientDialog";
 
 const ClientList = () => {
   const navigate = useNavigate();
@@ -29,7 +30,7 @@ const ClientList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const { data: clients, isLoading, error } = useQuery({
+  const { data: clients, isLoading, error, refetch } = useQuery({
     queryKey: ['clients', searchTerm, currentPage],
     queryFn: async () => {
       console.log('Fetching clients from Supabase...');
@@ -42,7 +43,6 @@ const ClientList = () => {
           query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
         }
 
-        // Add pagination
         const start = (currentPage - 1) * itemsPerPage;
         const end = start + itemsPerPage - 1;
         query = query.range(start, end);
@@ -131,7 +131,7 @@ const ClientList = () => {
                       <TableCell>
                         {client.street}, {client.suburb}, {client.city} {client.postcode}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="space-x-2">
                         <Button
                           variant="outline"
                           size="sm"
@@ -139,6 +139,11 @@ const ClientList = () => {
                         >
                           View
                         </Button>
+                        <DeleteClientDialog
+                          clientId={client.id}
+                          clientName={client.name}
+                          onRequestSent={() => refetch()}
+                        />
                       </TableCell>
                     </TableRow>
                   ))}

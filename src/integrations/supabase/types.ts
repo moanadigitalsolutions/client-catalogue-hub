@@ -9,6 +9,47 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      client_deletion_requests: {
+        Row: {
+          client_id: string | null
+          created_at: string | null
+          id: string
+          reason: string | null
+          requested_by: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["client_deletion_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string | null
+          id?: string
+          reason?: string | null
+          requested_by?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["client_deletion_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string | null
+          id?: string
+          reason?: string | null
+          requested_by?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["client_deletion_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_deletion_requests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           city: string | null
@@ -165,6 +206,7 @@ export type Database = {
       }
     }
     Enums: {
+      client_deletion_status: "pending" | "approved" | "rejected"
       user_role: "admin" | "employee"
     }
     CompositeTypes: {
