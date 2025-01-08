@@ -16,6 +16,7 @@ interface NewFieldFormProps {
 export const NewFieldForm = ({ onFieldAdded, existingFields }: NewFieldFormProps) => {
   const [newField, setNewField] = useState<Omit<FormField, "id">>({
     label: "",
+    field_id: "",
     type: "text",
     required: false,
   });
@@ -28,7 +29,7 @@ export const NewFieldForm = ({ onFieldAdded, existingFields }: NewFieldFormProps
 
     const field_id = newField.label.toLowerCase().replace(/\s+/g, "_");
     
-    if (existingFields.some((field) => field.id === field_id)) {
+    if (existingFields.some((field) => field.field_id === field_id)) {
       toast.error("A field with this name already exists");
       return;
     }
@@ -52,7 +53,7 @@ export const NewFieldForm = ({ onFieldAdded, existingFields }: NewFieldFormProps
     }
 
     onFieldAdded(data as FormField);
-    setNewField({ label: "", type: "text", required: false });
+    setNewField({ label: "", field_id: "", type: "text", required: false });
     toast.success("Field added successfully");
   };
 
