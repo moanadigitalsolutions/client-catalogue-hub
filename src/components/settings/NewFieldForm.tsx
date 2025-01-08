@@ -19,6 +19,7 @@ export const NewFieldForm = ({ onFieldAdded, existingFields }: NewFieldFormProps
     field_id: "",
     type: "text",
     required: false,
+    order_index: 0,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -65,7 +66,13 @@ export const NewFieldForm = ({ onFieldAdded, existingFields }: NewFieldFormProps
 
       console.log('Form field added successfully:', data);
       onFieldAdded(data as FormField);
-      setNewField({ label: "", field_id: "", type: "text", required: false });
+      setNewField({ 
+        label: "", 
+        field_id: "", 
+        type: "text", 
+        required: false, 
+        order_index: existingFields.length + 1 
+      });
       toast.success("Field added successfully");
     } catch (error) {
       console.error('Error in handleAddField:', error);
