@@ -6,39 +6,81 @@ import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import DashboardMetricCard from "@/components/dashboard/DashboardMetricCard";
 import { useState } from "react";
-
-// Temporary mock data - replace with actual API calls
-const mockMonthlyData = [
-  { month: 'Jan', clients: 4 },
-  { month: 'Feb', clients: 7 },
-  { month: 'Mar', clients: 12 },
-  { month: 'Apr', clients: 15 },
-  { month: 'May', clients: 18 },
-];
-
-const mockCityData = [
-  { name: 'Sydney', value: 35 },
-  { name: 'Melbourne', value: 25 },
-  { name: 'Brisbane', value: 20 },
-  { name: 'Perth', value: 15 },
-  { name: 'Adelaide', value: 5 },
-];
+import { supabase } from "@/integrations/supabase/client";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 const Dashboard = () => {
   const [showAddWidget, setShowAddWidget] = useState(false);
 
-  // Replace with actual API call
+  // Fetch all clients data
   const { data: clientsData, isLoading } = useQuery({
     queryKey: ['dashboard-metrics'],
     queryFn: async () => {
       console.log('Fetching dashboard metrics...');
-      // Simulate API call
+      
+      // Get total clients count
+      const { data: totalClients, error: countError } = await supabase
+        .from('clients')
+        .select('*');
+      
+      if (countError) {
+        console.error('Error fetching total clients:', countError);
+        throw countError;
+      }
+
+      // Get new clients this month
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      
+      const { data: newClients, error: newClientsError } = await supabase
+        .from('clients')
+        .select('*')
+        .gte('created_at', startOfMonth.toISOString());
+
+      if (newClientsError) {
+        console.error('Error fetching new clients:', newClientsError);
+        throw newClientsError;
+      }
+
+      // Get clients by city for pie chart
+      const cityData = totalClients.reduce((acc: any[], client) => {
+        if (client.city) {
+          const existingCity = acc.find(item => item.name === client.city);
+          if (existingCity) {
+            existingCity.value++;
+          } else {
+            acc.push({ name: client.city, value: 1 });
+          }
+        }
+        return acc;
+      }, []);
+
+      // Get monthly growth data
+      const monthlyData = Array.from({ length: 5 }, (_, i) => {
+        const date = new Date();
+        date.setMonth(date.getMonth() - i);
+        const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+        const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+        
+        const monthClients = totalClients.filter(client => {
+          const clientDate = new Date(client.created_at);
+          return clientDate >= monthStart && clientDate <= monthEnd;
+        });
+
+        return {
+          month: date.toLocaleString('default', { month: 'short' }),
+          clients: monthClients.length
+        };
+      }).reverse();
+
       return {
-        totalClients: 150,
-        newClientsThisMonth: 18,
-        activeClients: 120,
+        totalClients: totalClients.length,
+        newClientsThisMonth: newClients.length,
+        activeClients: totalClients.length, // Assuming all clients are active for now
+        cityData,
+        monthlyData
       };
     },
   });
@@ -85,7 +127,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <ChartContainer className="h-[300px]" config={{}}>
-              <BarChart data={mockMonthlyData}>
+              <BarChart data={clientsData?.monthlyData || []}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
@@ -105,7 +147,7 @@ const Dashboard = () => {
             <ChartContainer className="h-[300px]" config={{}}>
               <PieChart>
                 <Pie
-                  data={mockCityData}
+                  data={clientsData?.cityData || []}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -114,7 +156,7 @@ const Dashboard = () => {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {mockCityData.map((entry, index) => (
+                  {(clientsData?.cityData || []).map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
