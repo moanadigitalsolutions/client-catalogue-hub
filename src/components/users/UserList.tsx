@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Trash2, UserCog } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { UserRoleSelect } from "./UserRoleSelect";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -17,23 +17,38 @@ export const UserList = () => {
     queryKey: ['users'],
     queryFn: async () => {
       console.log('Fetching users...');
+      
+      // First, get all profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select(`
-          id,
-          name,
-          email,
-          user_roles (
-            role
-          )
-        `);
+        .select('id, name, email');
 
       if (profilesError) {
         console.error('Error fetching profiles:', profilesError);
         throw profilesError;
       }
 
-      return profiles || [];
+      // Then, get all user roles
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+
+      if (rolesError) {
+        console.error('Error fetching user roles:', rolesError);
+        throw rolesError;
+      }
+
+      // Combine the data
+      const combinedData = profiles.map(profile => ({
+        ...profile,
+        user_roles: [
+          {
+            role: userRoles.find(role => role.user_id === profile.id)?.role || 'employee'
+          }
+        ]
+      }));
+
+      return combinedData || [];
     },
   });
 
