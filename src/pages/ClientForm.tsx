@@ -6,9 +6,12 @@ import { Form } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DynamicFormField } from "@/components/client/DynamicFormField";
 import { ClientFormHeader } from "@/components/client/ClientFormHeader";
+import { DocumentUpload } from "@/components/client/DocumentUpload";
 import { useFormFields } from "@/hooks/useFormFields";
 import { supabase } from "@/lib/supabase";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UserCircle, FileText } from "lucide-react";
 
 interface ClientFormData {
   [key: string]: any;
@@ -32,10 +35,9 @@ const ClientForm = () => {
       if (!id) return null;
       console.log('Fetching client details:', id);
       
-      // Only select the fields that exist in the clients table
       const { data, error } = await supabase
         .from('clients')
-        .select('id, name, email, phone, street, suburb, city, postcode, gender, created_at')
+        .select('*')
         .eq('id', id)
         .maybeSingle();
 
@@ -52,7 +54,6 @@ const ClientForm = () => {
       }
 
       console.log('Client details:', data);
-      // Reset form with client data
       form.reset(data);
       return data;
     },
@@ -63,28 +64,16 @@ const ClientForm = () => {
     mutationFn: async (data: ClientFormData) => {
       console.log('Saving client data:', data);
       
-      // Filter out any fields that don't exist in the clients table
-      const clientData = {
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        street: data.street,
-        suburb: data.suburb,
-        city: data.city,
-        postcode: data.postcode,
-        gender: data.gender,
-      };
-
       if (isEditing) {
         const { error } = await supabase
           .from('clients')
-          .update(clientData)
+          .update(data)
           .eq('id', id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('clients')
-          .insert([clientData]);
+          .insert([data]);
         if (error) throw error;
       }
     },
@@ -108,6 +97,15 @@ const ClientForm = () => {
     return <div className="flex items-center justify-center p-8">Loading client details...</div>;
   }
 
+  // Group fields by category
+  const personalFields = fields.filter(f => 
+    ['name', 'email', 'phone', 'gender', 'qualification'].includes(f.field_id)
+  );
+  
+  const addressFields = fields.filter(f => 
+    ['street', 'suburb', 'city', 'postcode'].includes(f.field_id)
+  );
+
   return (
     <div className="container max-w-3xl space-y-6 p-4">
       <ClientFormHeader isEditing={isEditing} />
@@ -117,35 +115,70 @@ const ClientForm = () => {
           <CardTitle>Client Information</CardTitle>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="space-y-6"
-            >
-              <div className="grid gap-4 md:grid-cols-2">
-                {fields.map((field) => (
-                  <DynamicFormField
-                    key={field.id}
-                    field={field}
-                    form={form}
-                  />
-                ))}
-              </div>
+          <Tabs defaultValue="personal" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+              <TabsTrigger value="personal" className="flex items-center gap-2">
+                <UserCircle className="h-4 w-4" />
+                Personal Info
+              </TabsTrigger>
+              {isEditing && (
+                <TabsTrigger value="documents" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Documents
+                </TabsTrigger>
+              )}
+            </TabsList>
 
-              <div className="flex justify-end space-x-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate("/clients")}
+            <TabsContent value="personal">
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-6"
                 >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={mutation.isPending}>
-                  {isEditing ? "Update Client" : "Create Client"}
-                </Button>
-              </div>
-            </form>
-          </Form>
+                  <div className="space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {personalFields.map((field) => (
+                        <DynamicFormField
+                          key={field.id}
+                          field={field}
+                          form={form}
+                        />
+                      ))}
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {addressFields.map((field) => (
+                        <DynamicFormField
+                          key={field.id}
+                          field={field}
+                          form={form}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => navigate("/clients")}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={mutation.isPending}>
+                      {isEditing ? "Update Client" : "Create Client"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </TabsContent>
+
+            {isEditing && (
+              <TabsContent value="documents">
+                <DocumentUpload clientId={id} />
+              </TabsContent>
+            )}
+          </Tabs>
         </CardContent>
       </Card>
     </div>

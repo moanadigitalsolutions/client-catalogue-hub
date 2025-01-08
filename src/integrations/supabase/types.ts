@@ -64,6 +64,50 @@ export type Database = {
           },
         ]
       }
+      client_documents: {
+        Row: {
+          client_id: string
+          content_type: string
+          created_at: string
+          file_path: string
+          filename: string
+          id: string
+          size: number
+          updated_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          client_id: string
+          content_type: string
+          created_at?: string
+          file_path: string
+          filename: string
+          id?: string
+          size: number
+          updated_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          client_id?: string
+          content_type?: string
+          created_at?: string
+          file_path?: string
+          filename?: string
+          id?: string
+          size?: number
+          updated_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           city: string | null
@@ -105,6 +149,47 @@ export type Database = {
           suburb?: string | null
         }
         Relationships: []
+      }
+      document_deletion_requests: {
+        Row: {
+          created_at: string | null
+          document_id: string
+          id: string
+          reason: string | null
+          requested_by: string
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["client_deletion_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          document_id: string
+          id?: string
+          reason?: string | null
+          requested_by: string
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["client_deletion_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          document_id?: string
+          id?: string
+          reason?: string | null
+          requested_by?: string
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["client_deletion_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_deletion_requests_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "client_documents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       form_fields: {
         Row: {
