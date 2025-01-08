@@ -53,6 +53,12 @@ export const DocumentList = ({ documents, formatFileSize }: DocumentListProps) =
     enabled: !!user,
   });
 
+  // Filter out documents that have approved deletion requests
+  const filteredDocuments = documents.filter(doc => {
+    const deletionRequest = existingRequests?.find(req => req.document_id === doc.id);
+    return !deletionRequest || deletionRequest.status !== 'approved';
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (documentId: string) => {
       if (!user) throw new Error('User must be authenticated to request deletion');
@@ -115,7 +121,7 @@ export const DocumentList = ({ documents, formatFileSize }: DocumentListProps) =
           </TableRow>
         </TableHeader>
         <TableBody>
-          {documents.map((doc) => (
+          {filteredDocuments.map((doc) => (
             <DocumentRow
               key={doc.id}
               document={doc}
@@ -129,7 +135,7 @@ export const DocumentList = ({ documents, formatFileSize }: DocumentListProps) =
               isPending={deleteMutation.isPending}
             />
           ))}
-          {documents.length === 0 && (
+          {filteredDocuments.length === 0 && (
             <TableRow>
               <TableCell colSpan={5} className="text-center text-muted-foreground">
                 No documents uploaded yet
