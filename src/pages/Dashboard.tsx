@@ -7,6 +7,7 @@ import UserBadge from "@/components/dashboard/UserBadge";
 import UserActivities from "@/components/dashboard/UserActivities";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Dashboard = () => {
   const [showAddWidget, setShowAddWidget] = useState(false);
