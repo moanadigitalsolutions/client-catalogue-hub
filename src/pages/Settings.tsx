@@ -7,11 +7,12 @@ import { DataImportExport } from "@/components/settings/DataImportExport";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Settings = () => {
   const { user } = useAuth();
 
-  const { data: userRole, isLoading } = useQuery({
+  const { data: userRole, isLoading, error } = useQuery({
     queryKey: ['userRole', user?.id],
     queryFn: async () => {
       console.log('Fetching user role...');
@@ -19,15 +20,15 @@ const Settings = () => {
         .from('user_roles')
         .select('role')
         .eq('user_id', user?.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching user role:', error);
         throw error;
       }
 
-      console.log('User role:', data);
-      return data?.role;
+      console.log('User role data:', data);
+      return data?.role || null;
     },
   });
 
@@ -40,8 +41,21 @@ const Settings = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="container space-y-8 p-4">
+        <Alert variant="destructive">
+          <AlertDescription>
+            Error loading user role. Please try again later.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   // Redirect non-admin users
   if (userRole !== 'admin') {
+    console.log('User is not admin, redirecting to dashboard');
     return <Navigate to="/dashboard" replace />;
   }
 
