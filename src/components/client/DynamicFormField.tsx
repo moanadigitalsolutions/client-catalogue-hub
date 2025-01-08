@@ -31,7 +31,7 @@ export const DynamicFormField = ({ field, form }: DynamicFormFieldProps) => {
         return (
           <FormField
             control={form.control}
-            name={field.id}
+            name={field.field_id}
             render={({ field: formField }) => (
               <FormItem>
                 <FormLabel>{field.label}</FormLabel>
@@ -48,7 +48,7 @@ export const DynamicFormField = ({ field, form }: DynamicFormFieldProps) => {
         return (
           <FormField
             control={form.control}
-            name={field.id}
+            name={field.field_id}
             render={({ field: formField }) => (
               <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4">
                 <FormControl>
@@ -68,7 +68,7 @@ export const DynamicFormField = ({ field, form }: DynamicFormFieldProps) => {
         return (
           <FormField
             control={form.control}
-            name={field.id}
+            name={field.field_id}
             render={({ field: formField }) => (
               <FormItem>
                 <FormLabel>{field.label}</FormLabel>
@@ -96,7 +96,7 @@ export const DynamicFormField = ({ field, form }: DynamicFormFieldProps) => {
         return (
           <FormField
             control={form.control}
-            name={field.id}
+            name={field.field_id}
             render={({ field: formField }) => (
               <FormItem>
                 <FormLabel>{field.label}</FormLabel>
@@ -129,7 +129,7 @@ export const DynamicFormField = ({ field, form }: DynamicFormFieldProps) => {
         return (
           <FormField
             control={form.control}
-            name={field.id}
+            name={field.field_id}
             render={({ field: formField }) => (
               <FormItem>
                 <FormLabel>{field.label}</FormLabel>
