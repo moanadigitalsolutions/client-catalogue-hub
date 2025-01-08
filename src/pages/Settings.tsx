@@ -1,17 +1,75 @@
+import { useAuth } from "@/contexts/AuthContext";
+import { Navigate } from "react-router-dom";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FormFieldsSettings } from "@/components/settings/FormFieldsSettings";
 import { UserManagement } from "@/components/settings/UserManagement";
 import { DataImportExport } from "@/components/settings/DataImportExport";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Settings = () => {
+  const { user } = useAuth();
+
+  const { data: userRole, isLoading } = useQuery({
+    queryKey: ['userRole', user?.id],
+    queryFn: async () => {
+      console.log('Fetching user role...');
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user role:', error);
+        throw error;
+      }
+
+      console.log('User role:', data);
+      return data?.role;
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="container space-y-8 p-4">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-[200px] w-full" />
+      </div>
+    );
+  }
+
+  // Redirect non-admin users
+  if (userRole !== 'admin') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return (
     <div className="container space-y-8 p-4">
-      <h1 className="text-3xl font-bold">Settings</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Settings</h1>
+      </div>
       
-      <UserManagement />
-      
-      <FormFieldsSettings />
-
-      <DataImportExport />
+      <Tabs defaultValue="users" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="users">User Management</TabsTrigger>
+          <TabsTrigger value="forms">Form Fields</TabsTrigger>
+          <TabsTrigger value="data">Data Management</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="users" className="mt-6">
+          <UserManagement />
+        </TabsContent>
+        
+        <TabsContent value="forms" className="mt-6">
+          <FormFieldsSettings />
+        </TabsContent>
+        
+        <TabsContent value="data" className="mt-6">
+          <DataImportExport />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
