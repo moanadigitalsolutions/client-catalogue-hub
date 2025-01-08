@@ -1,27 +1,13 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Upload } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, File, Trash2 } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
-import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DocumentList } from "./DocumentList";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Document {
   id: string;
@@ -34,6 +20,7 @@ interface Document {
 export const DocumentUpload = ({ clientId }: { clientId: string }) => {
   const [file, setFile] = useState<File | null>(null);
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ['clientDocuments', clientId],
@@ -56,16 +43,23 @@ export const DocumentUpload = ({ clientId }: { clientId: string }) => {
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
+      if (!user) throw new Error('User not authenticated');
+
       const timestamp = new Date().toISOString();
       const fileExt = file.name.split('.').pop();
       const filePath = `${clientId}/${timestamp}-${crypto.randomUUID()}.${fileExt}`;
 
+      console.log('Uploading file to storage:', { filePath, fileType: file.type });
       const { error: uploadError } = await supabase.storage
         .from('client_documents')
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw uploadError;
+      }
 
+      console.log('File uploaded successfully, saving metadata to database');
       const { error: dbError } = await supabase
         .from('client_documents')
         .insert({
@@ -74,9 +68,13 @@ export const DocumentUpload = ({ clientId }: { clientId: string }) => {
           file_path: filePath,
           content_type: file.type,
           size: file.size,
+          uploaded_by: user.id, // Add the user ID here
         });
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error('Database insert error:', dbError);
+        throw dbError;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clientDocuments', clientId] });
@@ -86,26 +84,6 @@ export const DocumentUpload = ({ clientId }: { clientId: string }) => {
     onError: (error) => {
       console.error('Upload error:', error);
       toast.error('Failed to upload document');
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (documentId: string) => {
-      const { error } = await supabase
-        .from('document_deletion_requests')
-        .insert({
-          document_id: documentId,
-          reason: 'Document no longer needed',
-        });
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success('Deletion request submitted');
-    },
-    onError: (error) => {
-      console.error('Delete request error:', error);
-      toast.error('Failed to request document deletion');
     },
   });
 
@@ -160,74 +138,7 @@ export const DocumentUpload = ({ clientId }: { clientId: string }) => {
         </Button>
       </div>
 
-      <div className="border rounded-md">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Document</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Size</TableHead>
-              <TableHead>Uploaded</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {documents.map((doc) => (
-              <TableRow key={doc.id}>
-                <TableCell className="font-medium">
-                  <div className="flex items-center">
-                    <File className="h-4 w-4 mr-2" />
-                    {doc.filename}
-                  </div>
-                </TableCell>
-                <TableCell>{doc.content_type}</TableCell>
-                <TableCell>{formatFileSize(doc.size)}</TableCell>
-                <TableCell>
-                  {new Date(doc.created_at).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Request Document Deletion</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4 py-4">
-                        <p>
-                          Are you sure you want to request deletion of this document?
-                          An admin will review your request.
-                        </p>
-                        <Button
-                          variant="destructive"
-                          onClick={() => deleteMutation.mutate(doc.id)}
-                          disabled={deleteMutation.isPending}
-                        >
-                          Request Deletion
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </TableCell>
-              </TableRow>
-            ))}
-            {documents.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
-                  No documents uploaded yet
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <DocumentList documents={documents} formatFileSize={formatFileSize} />
     </div>
   );
 };
