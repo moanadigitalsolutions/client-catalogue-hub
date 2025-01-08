@@ -2,6 +2,7 @@ import { File, Trash2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Dialog,
   DialogContent,
@@ -34,20 +35,30 @@ interface DocumentListProps {
 
 export const DocumentList = ({ documents, formatFileSize }: DocumentListProps) => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const deleteMutation = useMutation({
     mutationFn: async (documentId: string) => {
+      if (!user) throw new Error('User must be authenticated to request deletion');
+      
+      console.log('Requesting document deletion:', { documentId, userId: user.id });
+      
       const { error } = await supabase
         .from('document_deletion_requests')
         .insert({
           document_id: documentId,
+          requested_by: user.id,
           reason: 'Document no longer needed',
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Delete request error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast.success('Deletion request submitted');
+      queryClient.invalidateQueries({ queryKey: ['clientDocuments'] });
     },
     onError: (error) => {
       console.error('Delete request error:', error);
