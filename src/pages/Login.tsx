@@ -73,11 +73,6 @@ const Login = () => {
               Login
             </Button>
           </form>
-          <div className="mt-4 text-sm text-center text-gray-500">
-            Temporary Admin Login:<br />
-            Email: admin@temp.com<br />
-            Password: admin123
-          </div>
         </CardContent>
       </Card>
     </div>
