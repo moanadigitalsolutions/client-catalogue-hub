@@ -3,6 +3,7 @@ import { Plus } from "lucide-react";
 import DashboardMetricCard from "@/components/dashboard/DashboardMetricCard";
 import MonthlyGrowthChart from "@/components/dashboard/MonthlyGrowthChart";
 import ClientsByCityChart from "@/components/dashboard/ClientsByCityChart";
+import UserBadge from "@/components/dashboard/UserBadge";
 import UserActivities from "@/components/dashboard/UserActivities";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { useState } from "react";
@@ -21,20 +22,18 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-8 p-6">
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <Button 
-          onClick={() => setShowAddWidget(true)}
-          className="shrink-0"
-        >
+    <div className="space-y-6 p-6">
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <UserBadge />
+        </div>
+        <Button onClick={() => setShowAddWidget(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Add Widget
         </Button>
       </div>
 
-      {/* Metrics Cards Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <DashboardMetricCard
           title="Total Clients"
@@ -53,35 +52,31 @@ const Dashboard = () => {
         />
       </div>
 
-      {/* Charts and Activities Grid */}
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Left Column */}
         <div className="space-y-6">
           <MonthlyGrowthChart 
             data={clientsData?.monthlyData || []} 
-            className="h-[400px]"
+            className="h-[360px]"
           />
           <UserActivities />
         </div>
-        
-        {/* Right Column */}
         <div className="space-y-6">
           <ClientsByCityChart 
             data={clientsData?.cityData || []} 
-            className="h-[400px]"
+            className="h-[360px]"
           />
           {clientsData?.genderData && (
             <Card>
               <CardHeader>
-                <CardTitle>Gender Distribution</CardTitle>
+                <CardTitle className="text-base font-medium">Gender Distribution</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-4 text-center">
-                  <div className="p-4 rounded-lg bg-primary/10">
+                  <div className="p-4 rounded-lg bg-muted">
                     <div className="text-2xl font-bold">{clientsData.genderData.male || 0}</div>
                     <div className="text-sm text-muted-foreground mt-1">Male</div>
                   </div>
-                  <div className="p-4 rounded-lg bg-primary/10">
+                  <div className="p-4 rounded-lg bg-muted">
                     <div className="text-2xl font-bold">{clientsData.genderData.female || 0}</div>
                     <div className="text-sm text-muted-foreground mt-1">Female</div>
                   </div>

@@ -9,20 +9,44 @@ interface MonthlyGrowthChartProps {
 const MonthlyGrowthChart = ({ data, className }: MonthlyGrowthChartProps) => {
   return (
     <Card className={className}>
-      <CardHeader>
-        <CardTitle>Monthly Growth</CardTitle>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base font-medium">Monthly Growth</CardTitle>
       </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={250}>
+      <CardContent className="pt-0">
+        <ResponsiveContainer width="100%" height={300}>
           <LineChart
             data={data}
-            margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+            margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
           >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" />
-            <YAxis />
-            <Tooltip />
-            <Line type="monotone" dataKey="clients" stroke="#8884d8" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <XAxis 
+              dataKey="month" 
+              stroke="#6b7280"
+              fontSize={12}
+              tickLine={false}
+            />
+            <YAxis 
+              stroke="#6b7280"
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
+            />
+            <Tooltip 
+              contentStyle={{ 
+                background: 'white',
+                border: '1px solid #e5e7eb',
+                borderRadius: '6px',
+                fontSize: '12px'
+              }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="clients" 
+              stroke="#8884d8" 
+              strokeWidth={2}
+              dot={{ fill: '#8884d8', strokeWidth: 2 }}
+              activeDot={{ r: 6, fill: '#8884d8' }}
+            />
           </LineChart>
         </ResponsiveContainer>
       </CardContent>
