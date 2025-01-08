@@ -35,7 +35,7 @@ const ClientForm = () => {
         .from('clients')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching client:', error);
@@ -43,7 +43,14 @@ const ClientForm = () => {
         throw error;
       }
 
+      if (!data) {
+        toast.error('Client not found');
+        navigate('/clients');
+        return null;
+      }
+
       console.log('Client details:', data);
+      // Reset form with client data
       form.reset(data);
       return data;
     },
@@ -83,7 +90,7 @@ const ClientForm = () => {
   };
 
   if (isLoading) {
-    return <div>Loading client details...</div>;
+    return <div className="flex items-center justify-center p-8">Loading client details...</div>;
   }
 
   return (
