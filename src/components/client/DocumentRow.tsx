@@ -1,21 +1,9 @@
-import { File } from "lucide-react";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { DocumentActions } from "./DocumentActions";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { Document } from "@/types/documents";
-
-interface DocumentRowProps {
-  document: Document;
-  status: string | null;
-  formatFileSize: (bytes: number) => string;
-  dialogOpen: boolean;
-  selectedDocId: string | null;
-  setDialogOpen: (open: boolean) => void;
-  setSelectedDocId: (id: string | null) => void;
-  onDeleteRequest: (id: string) => void;
-  isPending: boolean;
-}
+import { format } from "date-fns";
+import { DocumentRowProps } from "@/types/documents";
 
 export const DocumentRow = ({
   document,
@@ -28,47 +16,44 @@ export const DocumentRow = ({
   onDeleteRequest,
   isPending,
 }: DocumentRowProps) => {
-  const handleDocumentClick = async () => {
+  const handleDownload = async () => {
     try {
-      console.log('Fetching document URL:', document.file_path);
       const { data, error } = await supabase.storage
         .from('client_documents')
-        .createSignedUrl(document.file_path, 60); // URL valid for 60 seconds
+        .download(document.file_path);
 
       if (error) {
-        console.error('Error creating signed URL:', error);
-        toast.error('Failed to access document');
-        return;
+        throw error;
       }
 
-      if (data?.signedUrl) {
-        console.log('Opening document URL:', data.signedUrl);
-        window.open(data.signedUrl, '_blank');
-      }
+      // Create a download link
+      const url = window.URL.createObjectURL(data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = document.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Error handling document click:', error);
-      toast.error('Failed to open document');
+      console.error('Download error:', error);
+      toast.error('Failed to download document');
     }
   };
 
   return (
-    <TableRow>
+    <TableRow key={document.id}>
       <TableCell className="font-medium">
-        <div 
-          className="flex items-center cursor-pointer hover:text-primary"
-          onClick={handleDocumentClick}
-          role="button"
-          tabIndex={0}
+        <button
+          onClick={handleDownload}
+          className="text-left hover:underline text-primary"
         >
-          <File className="h-4 w-4 mr-2" />
           {document.filename}
-        </div>
+        </button>
       </TableCell>
       <TableCell>{document.content_type}</TableCell>
       <TableCell>{formatFileSize(document.size)}</TableCell>
-      <TableCell>
-        {new Date(document.created_at).toLocaleDateString()}
-      </TableCell>
+      <TableCell>{format(new Date(document.created_at), 'PP')}</TableCell>
       <TableCell>
         <DocumentActions
           documentId={document.id}

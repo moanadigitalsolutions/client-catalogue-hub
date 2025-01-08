@@ -1,16 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { DocumentDeletionDialog } from "./DocumentDeletionDialog";
-
-interface DocumentActionsProps {
-  documentId: string;
-  status: string | null;
-  dialogOpen: boolean;
-  setDialogOpen: (open: boolean) => void;
-  setSelectedDocId: (id: string | null) => void;
-  onDeleteRequest: (id: string) => void;
-  isPending: boolean;
-}
+import { DocumentActionsProps } from "@/types/documents";
 
 export const DocumentActions = ({
   documentId,
