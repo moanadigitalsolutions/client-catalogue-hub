@@ -15,6 +15,7 @@ interface Document {
   content_type: string;
   size: number;
   created_at: string;
+  file_path: string;
 }
 
 export const DocumentUpload = ({ clientId }: { clientId: string }) => {
@@ -68,7 +69,7 @@ export const DocumentUpload = ({ clientId }: { clientId: string }) => {
           file_path: filePath,
           content_type: file.type,
           size: file.size,
-          uploaded_by: user.id, // Add the user ID here
+          uploaded_by: user.id,
         });
 
       if (dbError) {
