@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Trash2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 interface DeleteClientDialogProps {
   clientId: string;
@@ -31,7 +32,54 @@ export const DeleteClientDialog = ({
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
 
-  const handleSubmit = async () => {
+  // Fetch user role
+  const { data: userRole } = useQuery({
+    queryKey: ['userRole', user?.id],
+    queryFn: async () => {
+      console.log('Fetching user role for:', user?.id);
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user role:', error);
+        throw error;
+      }
+
+      console.log('User role:', data?.role);
+      return data?.role;
+    },
+    enabled: !!user?.id,
+  });
+
+  const isAdmin = userRole === 'admin';
+
+  const handleDelete = async () => {
+    if (!user) return;
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from("clients")
+        .delete()
+        .eq("id", clientId);
+
+      if (error) throw error;
+
+      toast.success("Client deleted successfully");
+      setIsOpen(false);
+      onRequestSent();
+    } catch (error) {
+      console.error("Error deleting client:", error);
+      toast.error("Failed to delete client");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRequestDeletion = async () => {
     if (!reason.trim()) {
       toast.error("Please provide a reason for deletion");
       return;
@@ -71,20 +119,25 @@ export const DeleteClientDialog = ({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Request Client Deletion</DialogTitle>
+          <DialogTitle>
+            {isAdmin ? "Delete Client" : "Request Client Deletion"}
+          </DialogTitle>
           <DialogDescription>
-            You are requesting to delete the client: {clientName}. This request will
-            need to be approved by an administrator.
+            {isAdmin
+              ? `Are you sure you want to delete the client: ${clientName}?`
+              : `You are requesting to delete the client: ${clientName}. This request will need to be approved by an administrator.`}
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4">
-          <Textarea
-            placeholder="Please provide a reason for deletion..."
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            className="min-h-[100px]"
-          />
-        </div>
+        {!isAdmin && (
+          <div className="py-4">
+            <Textarea
+              placeholder="Please provide a reason for deletion..."
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              className="min-h-[100px]"
+            />
+          </div>
+        )}
         <DialogFooter>
           <Button
             variant="outline"
@@ -93,8 +146,12 @@ export const DeleteClientDialog = ({
           >
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading}>
-            Submit Request
+          <Button 
+            onClick={isAdmin ? handleDelete : handleRequestDeletion} 
+            disabled={isLoading}
+            variant={isAdmin ? "destructive" : "default"}
+          >
+            {isAdmin ? "Delete" : "Submit Request"}
           </Button>
         </DialogFooter>
       </DialogContent>
