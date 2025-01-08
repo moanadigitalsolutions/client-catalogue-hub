@@ -7,21 +7,36 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { PlusCircle, Trash2 } from "lucide-react";
 
-type FieldType = "text" | "number" | "date" | "email" | "textarea" | "file";
+type FieldType = 
+  | "text" 
+  | "number" 
+  | "date" 
+  | "email" 
+  | "textarea" 
+  | "file" 
+  | "checkbox"
+  | "radio"
+  | "select"
+  | "rating"
+  | "phone"
+  | "url"
+  | "time";
 
 interface FormField {
   id: string;
   label: string;
   type: FieldType;
   required: boolean;
+  options?: string[]; // For radio, select fields
 }
 
 const Settings = () => {
   const [fields, setFields] = useState<FormField[]>([
     { id: "name", label: "Full Name", type: "text", required: true },
     { id: "email", label: "Email", type: "email", required: true },
-    { id: "phone", label: "Phone Number", type: "text", required: false },
+    { id: "phone", label: "Phone Number", type: "phone", required: false },
   ]);
+  
   const [newField, setNewField] = useState<Omit<FormField, "id">>({
     label: "",
     type: "text",
@@ -118,7 +133,7 @@ const Settings = () => {
                     onValueChange={(value: FieldType) =>
                       setNewField({ ...newField, type: value })
                     }
-                    className="flex flex-wrap gap-4"
+                    className="grid grid-cols-2 md:grid-cols-3 gap-4"
                   >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="text" id="text" />
@@ -143,6 +158,34 @@ const Settings = () => {
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="file" id="file" />
                       <Label htmlFor="file">File Upload</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="checkbox" id="checkbox" />
+                      <Label htmlFor="checkbox">Checkbox</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="radio" id="radio" />
+                      <Label htmlFor="radio">Radio Group</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="select" id="select" />
+                      <Label htmlFor="select">Dropdown</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="rating" id="rating" />
+                      <Label htmlFor="rating">Rating</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="phone" id="phone" />
+                      <Label htmlFor="phone">Phone</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="url" id="url" />
+                      <Label htmlFor="url">Website URL</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="time" id="time" />
+                      <Label htmlFor="time">Time</Label>
                     </div>
                   </RadioGroup>
                 </div>
