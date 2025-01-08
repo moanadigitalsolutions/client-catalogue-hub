@@ -7,11 +7,13 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { PlusCircle, Trash2 } from "lucide-react";
 import { User, UserRole } from "@/types";
+import { supabase } from "@/lib/supabase";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const UserManagement = () => {
-  const [users, setUsers] = useState<User[]>([
-    { id: "1", name: "Admin User", email: "admin@example.com", role: "admin" },
-  ]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [newUser, setNewUser] = useState<Omit<User, "id">>({
     name: "",
@@ -19,42 +21,106 @@ export const UserManagement = () => {
     role: "employee",
   });
 
-  const handleAddUser = () => {
-    if (!newUser.name.trim() || !newUser.email.trim()) {
-      toast.error("Please fill in all fields");
-      return;
-    }
+  const handleAddUser = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-    if (!newUser.email.includes("@")) {
-      toast.error("Please enter a valid email address");
-      return;
-    }
+      if (!newUser.name.trim() || !newUser.email.trim()) {
+        toast.error("Please fill in all fields");
+        return;
+      }
 
-    if (users.some((user) => user.email === newUser.email)) {
-      toast.error("A user with this email already exists");
-      return;
-    }
+      if (!newUser.email.includes("@")) {
+        toast.error("Please enter a valid email address");
+        return;
+      }
 
-    const id = Math.random().toString(36).substr(2, 9);
-    setUsers([...users, { ...newUser, id }]);
-    setNewUser({ name: "", email: "", role: "employee" });
-    toast.success("User added successfully");
+      // Create user in Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: newUser.email,
+        password: "tempPassword123!", // You might want to generate this randomly
+        email_confirm: true,
+      });
+
+      if (authError) {
+        console.error("Error creating user:", authError);
+        setError(authError.message);
+        toast.error("Failed to create user");
+        return;
+      }
+
+      if (!authData.user) {
+        setError("Failed to create user");
+        return;
+      }
+
+      // Create user profile
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .insert({
+          id: authData.user.id,
+          name: newUser.name,
+          email: newUser.email,
+        });
+
+      if (profileError) {
+        console.error("Error creating profile:", profileError);
+        setError(profileError.message);
+        return;
+      }
+
+      // Assign user role
+      const { error: roleError } = await supabase
+        .from("user_roles")
+        .insert({
+          user_id: authData.user.id,
+          role: newUser.role,
+        });
+
+      if (roleError) {
+        console.error("Error assigning role:", roleError);
+        setError(roleError.message);
+        return;
+      }
+
+      // Add to local state
+      setUsers([...users, { ...newUser, id: authData.user.id }]);
+      setNewUser({ name: "", email: "", role: "employee" });
+      toast.success("User added successfully");
+
+    } catch (error) {
+      console.error("Error in handleAddUser:", error);
+      setError("An unexpected error occurred");
+      toast.error("Failed to create user");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleRemoveUser = (id: string) => {
-    if (users.length === 1) {
-      toast.error("Cannot remove the last admin user");
-      return;
-    }
+  const handleRemoveUser = async (id: string) => {
+    try {
+      setLoading(true);
+      setError(null);
 
-    const user = users.find((u) => u.id === id);
-    if (user?.role === "admin" && users.filter((u) => u.role === "admin").length === 1) {
-      toast.error("Cannot remove the last admin user");
-      return;
-    }
+      const { error: deleteError } = await supabase.auth.admin.deleteUser(id);
 
-    setUsers(users.filter((user) => user.id !== id));
-    toast.success("User removed successfully");
+      if (deleteError) {
+        console.error("Error deleting user:", deleteError);
+        setError(deleteError.message);
+        toast.error("Failed to delete user");
+        return;
+      }
+
+      setUsers(users.filter((user) => user.id !== id));
+      toast.success("User removed successfully");
+    } catch (error) {
+      console.error("Error in handleRemoveUser:", error);
+      setError("An unexpected error occurred");
+      toast.error("Failed to delete user");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -64,6 +130,12 @@ export const UserManagement = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
           {/* Existing Users */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Current Users</h3>
@@ -83,6 +155,7 @@ export const UserManagement = () => {
                     variant="ghost"
                     size="icon"
                     onClick={() => handleRemoveUser(user.id)}
+                    disabled={loading}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -104,6 +177,7 @@ export const UserManagement = () => {
                     setNewUser({ ...newUser, name: e.target.value })
                   }
                   placeholder="Enter user's name"
+                  disabled={loading}
                 />
               </div>
 
@@ -117,6 +191,7 @@ export const UserManagement = () => {
                     setNewUser({ ...newUser, email: e.target.value })
                   }
                   placeholder="Enter user's email"
+                  disabled={loading}
                 />
               </div>
 
@@ -128,6 +203,7 @@ export const UserManagement = () => {
                     setNewUser({ ...newUser, role: value })
                   }
                   className="flex gap-4"
+                  disabled={loading}
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="admin" id="admin" />
@@ -140,9 +216,9 @@ export const UserManagement = () => {
                 </RadioGroup>
               </div>
 
-              <Button onClick={handleAddUser} className="w-full">
+              <Button onClick={handleAddUser} className="w-full" disabled={loading}>
                 <PlusCircle className="mr-2 h-4 w-4" />
-                Add User
+                {loading ? "Adding User..." : "Add User"}
               </Button>
             </div>
           </div>
