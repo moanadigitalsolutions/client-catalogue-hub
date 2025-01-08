@@ -1,6 +1,5 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import { User, AuthError } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
+import { createContext, useContext, useState } from 'react';
+import { User } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -15,52 +14,17 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    let mounted = true;
-
-    // Check active sessions and sets the user
-    const initializeAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (mounted) {
-          setUser(session?.user ?? null);
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error("Auth initialization error:", error);
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    initializeAuth();
-
-    // Listen for changes on auth state
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (mounted) {
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
-      console.log("AuthContext: Attempting sign in");
+      console.log("AuthContext: Attempting sign in with email:", email);
       
-      // Handle temporary admin login
+      // Simple login check
       if (email === "admin@temp.com" && password === "admin123") {
-        console.log("AuthContext: Using temporary admin login");
+        console.log("AuthContext: Login successful");
         const mockUser = {
           id: 'temp-admin',
           email: 'admin@temp.com',
@@ -70,33 +34,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         } as User;
         
         setUser(mockUser);
-        console.log("AuthContext: Mock user set, navigating to dashboard");
+        toast.success("Logged in successfully");
         navigate('/dashboard');
         return;
       }
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        console.error("AuthContext: Sign in error:", error.message);
-        if (error.message.includes('email_provider_disabled')) {
-          toast.error('Email authentication is currently disabled. Please enable it in your Supabase dashboard under Authentication > Providers.');
-          throw new Error('Email authentication is disabled. Please enable it in your Supabase dashboard.');
-        }
-        throw error;
-      }
-
-      if (data?.user) {
-        console.log("AuthContext: Sign in successful");
-        setUser(data.user);
-        navigate('/dashboard');
-      }
+      
+      // If credentials don't match, show error
+      console.error("AuthContext: Invalid credentials");
+      toast.error("Invalid email or password");
+      
     } catch (error) {
       console.error("AuthContext: Sign in error:", error);
-      throw error;
+      toast.error("An error occurred during sign in");
     } finally {
       setLoading(false);
     }
@@ -105,13 +54,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
       setUser(null);
       navigate('/login');
+      toast.success("Logged out successfully");
     } catch (error) {
       console.error("AuthContext: Sign out error:", error);
-      throw error;
+      toast.error("An error occurred during sign out");
     } finally {
       setLoading(false);
     }
