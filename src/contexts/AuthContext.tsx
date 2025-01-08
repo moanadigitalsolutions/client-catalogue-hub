@@ -82,6 +82,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) {
         console.error("AuthContext: Sign in error:", error.message);
+        if (error.message.includes('email_provider_disabled')) {
+          throw new Error('Email authentication is not enabled. Please enable it in your Supabase dashboard.');
+        }
         throw error;
       }
 
