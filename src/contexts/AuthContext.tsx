@@ -39,15 +39,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Handle temporary admin login
     if (email === "admin@temp.com" && password === "admin123") {
       console.log("AuthContext: Using temporary admin login");
-      // Set a mock user for the temporary admin
-      setUser({ 
+      const mockUser = {
         id: 'temp-admin',
         email: 'admin@temp.com',
-        // Add other required User properties
         aud: 'authenticated',
         created_at: new Date().toISOString(),
         role: 'authenticated',
-      } as User);
+      } as User;
+      
+      setUser(mockUser);
+      console.log("AuthContext: Mock user set, navigating to dashboard");
       navigate('/dashboard');
       return;
     }

@@ -5,37 +5,24 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { signIn } = useAuth();
-  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Attempting login with email:", email);
-    
-    // Temporary dummy admin login
-    if (email === "admin@temp.com" && password === "admin123") {
-      console.log("Using temporary admin login");
-      toast.success("Logged in as temporary admin");
-      navigate("/dashboard");
-      return;
-    }
+    console.log("Login component: Attempting login with email:", email);
     
     try {
       await signIn(email, password);
-      console.log("Login successful");
+      console.log("Login component: Login successful");
       toast.success("Logged in successfully");
     } catch (error: any) {
-      console.error("Login error details:", error);
-      
-      // Extract the error message from the response if available
+      console.error("Login component: Login error details:", error);
       const errorMessage = error.message || "Failed to login. Please check your credentials.";
-      console.error("Login error:", errorMessage);
-      
+      console.error("Login component: Login error:", errorMessage);
       toast.error(errorMessage);
     }
   };
