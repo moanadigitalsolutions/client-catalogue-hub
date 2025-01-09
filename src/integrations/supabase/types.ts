@@ -121,6 +121,7 @@ export type Database = {
           qualification: string | null
           street: string | null
           suburb: string | null
+          website: string | null
         }
         Insert: {
           city?: string | null
@@ -134,6 +135,7 @@ export type Database = {
           qualification?: string | null
           street?: string | null
           suburb?: string | null
+          website?: string | null
         }
         Update: {
           city?: string | null
@@ -147,6 +149,7 @@ export type Database = {
           qualification?: string | null
           street?: string | null
           suburb?: string | null
+          website?: string | null
         }
         Relationships: []
       }

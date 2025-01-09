@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import { DocumentRowProps } from "@/types/documents";
 
 export const DocumentRow = ({
-  document,
+  document: clientDocument,
   status,
   formatFileSize,
   dialogOpen,
@@ -20,7 +20,7 @@ export const DocumentRow = ({
     try {
       const { data, error } = await supabase.storage
         .from('client_documents')
-        .download(document.file_path);
+        .download(clientDocument.file_path);
 
       if (error) {
         throw error;
@@ -30,7 +30,7 @@ export const DocumentRow = ({
       const url = window.URL.createObjectURL(data);
       const link = document.createElement('a');
       link.href = url;
-      link.download = document.filename;
+      link.download = clientDocument.filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -42,23 +42,23 @@ export const DocumentRow = ({
   };
 
   return (
-    <TableRow key={document.id}>
+    <TableRow key={clientDocument.id}>
       <TableCell className="font-medium">
         <button
           onClick={handleDownload}
           className="text-left hover:underline text-primary"
         >
-          {document.filename}
+          {clientDocument.filename}
         </button>
       </TableCell>
-      <TableCell>{document.content_type}</TableCell>
-      <TableCell>{formatFileSize(document.size)}</TableCell>
-      <TableCell>{format(new Date(document.created_at), 'PP')}</TableCell>
+      <TableCell>{clientDocument.content_type}</TableCell>
+      <TableCell>{formatFileSize(clientDocument.size)}</TableCell>
+      <TableCell>{format(new Date(clientDocument.created_at), 'PP')}</TableCell>
       <TableCell>
         <DocumentActions
-          documentId={document.id}
+          documentId={clientDocument.id}
           status={status}
-          dialogOpen={dialogOpen && selectedDocId === document.id}
+          dialogOpen={dialogOpen && selectedDocId === clientDocument.id}
           setDialogOpen={setDialogOpen}
           setSelectedDocId={setSelectedDocId}
           onDeleteRequest={onDeleteRequest}
