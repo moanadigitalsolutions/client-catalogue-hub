@@ -12,25 +12,20 @@ const Layout = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="min-h-screen flex w-full">
         <AppSidebar />
-        <main className="flex-1 p-6 space-y-6 overflow-auto">
-          <div className="flex justify-between items-center bg-card rounded-xl p-4 shadow-md border border-border/50">
+        <main className="flex-1 p-6">
+          <div className="flex justify-between items-start mb-4">
             <Breadcrumbs />
-            <Button 
-              variant="ghost" 
-              onClick={signOut} 
-              size="sm"
-              className="hover:bg-primary/10 transition-colors duration-200"
-            >
+            <Button variant="ghost" onClick={signOut}>
               <LogOut className="h-4 w-4 mr-2" />
               Logout
             </Button>
           </div>
-          <div className="space-y-6">
+          <div className="grid gap-6">
             <Outlet />
           </div>
-          <div className="fixed bottom-6 right-6 z-50">
+          <div className="fixed bottom-6 right-6">
             <HelpGuide />
           </div>
         </main>

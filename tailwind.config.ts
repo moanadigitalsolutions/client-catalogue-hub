@@ -12,7 +12,7 @@ export default {
 	theme: {
 		container: {
 			center: true,
-			padding: '1.5rem',
+			padding: '2rem',
 			screens: {
 				'2xl': '1400px'
 			}
@@ -25,6 +25,7 @@ export default {
 				'lg': ['1.125rem', { lineHeight: '1.75rem' }],
 				'xl': ['1.25rem', { lineHeight: '1.75rem' }],
 				'2xl': ['1.5rem', { lineHeight: '2rem' }],
+				'3xl': ['1.875rem', { lineHeight: '2.25rem' }],
 			},
 			colors: {
 				border: 'hsl(var(--border))',

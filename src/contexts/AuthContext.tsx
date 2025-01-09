@@ -19,57 +19,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Initialize auth state from localStorage
   useEffect(() => {
-    const initializeAuth = async () => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error('Error getting session:', sessionError);
-          throw sessionError;
-        }
-
-        if (session?.user) {
-          console.log('Found existing session for user:', session.user.id);
-          setUser(session.user);
-          if (location.pathname === '/login') {
-            navigate('/dashboard');
-          }
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        // If we have a user and we're on the login page, redirect to dashboard
+        if (location.pathname === '/login') {
+          navigate('/dashboard');
         }
       } catch (error) {
-        console.error('Auth initialization error:', error);
-        localStorage.removeItem('sb-ffamaeearrzchaxuamcl-auth-token');
-      } finally {
-        setLoading(false);
+        console.error('Error parsing stored user:', error);
+        localStorage.removeItem('user');
       }
-    };
-
-    initializeAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.id);
-      
-      switch (event) {
-        case 'SIGNED_IN':
-          setUser(session?.user ?? null);
-          navigate('/dashboard');
-          break;
-        case 'SIGNED_OUT':
-          setUser(null);
-          navigate('/login');
-          break;
-        case 'TOKEN_REFRESHED':
-        case 'USER_UPDATED':
-          setUser(session?.user ?? null);
-          break;
-        default:
-          console.log('Unhandled auth event:', event);
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    }
+    setLoading(false);
   }, [navigate, location.pathname]);
 
   const signIn = async (email: string, password: string) => {
@@ -77,6 +43,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(true);
       console.log("AuthContext: Attempting sign in with email:", email);
       
+      // First try Supabase authentication
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -84,6 +51,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) {
         console.log("Supabase auth failed, trying temp admin:", error.message);
+        // If Supabase auth fails, try temp admin login
         if (email === "admin@temp.com" && password === "admin123") {
           console.log("AuthContext: Temp admin login successful");
           const mockUser = {
@@ -95,6 +63,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           } as User;
           
           setUser(mockUser);
+          localStorage.setItem('user', JSON.stringify(mockUser));
           toast.success("Logged in successfully as temp admin");
           
           const from = location.state?.from?.pathname || '/dashboard';
@@ -108,12 +77,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (data.user) {
         console.log("AuthContext: Supabase login successful");
         setUser(data.user);
+        localStorage.setItem('user', JSON.stringify(data.user));
         toast.success("Logged in successfully");
         
         const from = location.state?.from?.pathname || '/dashboard';
         console.log("AuthContext: Redirecting to:", from);
         navigate(from, { replace: true });
+        return;
       }
+      
     } catch (error) {
       console.error("AuthContext: Sign in error:", error);
       toast.error("Invalid email or password");
@@ -125,10 +97,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
-      localStorage.removeItem('sb-ffamaeearrzchaxuamcl-auth-token');
+      await supabase.auth.signOut();
+      localStorage.removeItem('user');
       setUser(null);
       navigate('/login');
       toast.success("Logged out successfully");

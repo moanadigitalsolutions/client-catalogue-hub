@@ -35,18 +35,17 @@ const MonthlyGrowthChart = ({ data, className }: MonthlyGrowthChartProps) => {
               contentStyle={{ 
                 background: 'white',
                 border: '1px solid #e5e7eb',
-                borderRadius: '8px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                borderRadius: '6px',
                 fontSize: '12px'
               }}
             />
             <Line 
               type="monotone" 
               dataKey="clients" 
-              stroke="#8B5CF6"
+              stroke="#8884d8" 
               strokeWidth={2}
-              dot={{ fill: '#8B5CF6', strokeWidth: 2 }}
-              activeDot={{ r: 6, fill: '#8B5CF6' }}
+              dot={{ fill: '#8884d8', strokeWidth: 2 }}
+              activeDot={{ r: 6, fill: '#8884d8' }}
             />
           </LineChart>
         </ResponsiveContainer>
