@@ -20,20 +20,36 @@ export const useFormFieldsSubscription = () => {
         },
         (payload) => {
           console.log('Form fields change detected:', payload);
+          
           // Invalidate and refetch form fields
           queryClient.invalidateQueries({ queryKey: ['formFields'] });
           
-          // Show toast notification
-          const event = payload.eventType;
-          const messages = {
-            INSERT: 'New form field added',
-            UPDATE: 'Form field updated',
-            DELETE: 'Form field removed'
-          };
-          toast.success(messages[event as keyof typeof messages]);
+          // Show appropriate toast notification based on the event type
+          switch (payload.eventType) {
+            case 'INSERT':
+              toast.success('New form field added');
+              break;
+            case 'UPDATE':
+              toast.success('Form field updated');
+              break;
+            case 'DELETE':
+              toast.success('Form field removed');
+              break;
+          }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Subscription status:', status);
+        
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to form fields changes');
+        } else if (status === 'CLOSED') {
+          console.log('Subscription to form fields changes closed');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('Error in form fields subscription channel');
+          toast.error('Error connecting to real-time updates');
+        }
+      });
 
     return () => {
       console.log('Cleaning up form fields subscription...');
