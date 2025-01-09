@@ -1,4 +1,4 @@
-import { FormField as FormFieldType } from "@/types";
+import { FormField as FormFieldType } from "@/types/index";
 import { UseFormReturn } from "react-hook-form";
 import { TextFormField } from "./form-fields/TextFormField";
 import { TextareaFormField } from "./form-fields/TextareaFormField";
@@ -13,6 +13,8 @@ interface DynamicFormFieldProps {
 }
 
 export const DynamicFormField = ({ field, form }: DynamicFormFieldProps) => {
+  console.log('Rendering dynamic form field:', field);
+
   const FormFieldComponent = (() => {
     switch (field.type) {
       case "textarea":
