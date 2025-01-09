@@ -7,6 +7,7 @@ import { DocumentRowProps } from "@/types/documents";
 import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { FileText, Image as ImageIcon } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const DocumentRow = ({
   document: clientDocument,
@@ -21,11 +22,17 @@ export const DocumentRow = ({
 }: DocumentRowProps) => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const { user } = useAuth();
 
   const isImage = clientDocument.content_type.startsWith('image/');
 
   const handlePreview = async () => {
     try {
+      if (!user) {
+        toast.error('You must be logged in to preview documents');
+        return;
+      }
+
       console.log('Fetching document for preview:', clientDocument.file_path);
       const { data, error } = await supabase.storage
         .from('client_documents')
@@ -51,6 +58,11 @@ export const DocumentRow = ({
 
   const handleDownload = async () => {
     try {
+      if (!user) {
+        toast.error('You must be logged in to download documents');
+        return;
+      }
+
       console.log('Downloading document:', clientDocument.file_path);
       const { data, error } = await supabase.storage
         .from('client_documents')

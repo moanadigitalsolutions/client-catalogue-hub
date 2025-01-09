@@ -13,6 +13,8 @@ export const useDocumentOperations = (clientId: string) => {
   const { data: documents, isLoading } = useQuery({
     queryKey: ['client-documents', clientId],
     queryFn: async () => {
+      if (!user) throw new Error('Authentication required');
+
       console.log('Fetching documents for client:', clientId);
       const { data, error } = await supabase
         .from('client_documents')
@@ -27,6 +29,7 @@ export const useDocumentOperations = (clientId: string) => {
       console.log('Fetched documents:', data);
       return data as Document[];
     },
+    enabled: !!user, // Only run query if user is authenticated
   });
 
   const uploadMutation = useMutation({
@@ -69,6 +72,7 @@ export const useDocumentOperations = (clientId: string) => {
 
       if (dbError) {
         console.error('Database insert error:', dbError);
+        // If database insert fails, clean up the uploaded file
         await supabase.storage
           .from('client_documents')
           .remove([filePath]);
