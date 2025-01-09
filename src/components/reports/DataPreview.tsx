@@ -4,7 +4,7 @@ import { FormField } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { DateRange } from "react-day-picker";
-import { TableHeader } from "./table/TableHeader";
+import { ReportTableHeader } from "./table/TableHeader";
 import { TableContent } from "./table/TableContent";
 import { LoadingState } from "./table/LoadingState";
 import { NoDataState } from "./table/NoDataState";
@@ -75,7 +75,7 @@ export const DataPreview = ({ selectedFields, fields, dateRange }: DataPreviewPr
   return (
     <ScrollArea className="h-[400px] border rounded-md">
       <Table>
-        <TableHeader selectedFields={selectedFields} fields={fields} />
+        <ReportTableHeader selectedFields={selectedFields} fields={fields} />
         {isLoading ? (
           <LoadingState colSpan={selectedFields.length} />
         ) : previewData && previewData.length > 0 ? (
