@@ -29,7 +29,7 @@ export const useDocumentOperations = (clientId: string) => {
       console.log('Fetched documents:', data);
       return data as Document[];
     },
-    enabled: !!user, // Only run query if user is authenticated
+    enabled: !!user,
   });
 
   const uploadMutation = useMutation({
@@ -38,27 +38,17 @@ export const useDocumentOperations = (clientId: string) => {
         throw new Error('User must be logged in to upload documents');
       }
 
-      console.log('Starting file upload:', file.name);
       setIsUploading(true);
-
       const sanitizedFileName = file.name.replace(/[^\x00-\x7F]/g, '');
       const timestamp = Date.now();
       const filePath = `clients/${clientId}/${timestamp}-${sanitizedFileName}`;
 
-      console.log('Uploading to storage with path:', filePath);
       const { error: uploadError } = await supabase.storage
         .from('client_documents')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
+        .upload(filePath, file);
 
-      if (uploadError) {
-        console.error('Storage upload error:', uploadError);
-        throw uploadError;
-      }
+      if (uploadError) throw uploadError;
 
-      console.log('File uploaded successfully, saving to database');
       const { error: dbError } = await supabase
         .from('client_documents')
         .insert({
@@ -71,8 +61,6 @@ export const useDocumentOperations = (clientId: string) => {
         });
 
       if (dbError) {
-        console.error('Database insert error:', dbError);
-        // If database insert fails, clean up the uploaded file
         await supabase.storage
           .from('client_documents')
           .remove([filePath]);
@@ -87,7 +75,6 @@ export const useDocumentOperations = (clientId: string) => {
       });
     },
     onSuccess: () => {
-      console.log('Upload completed successfully');
       queryClient.invalidateQueries({ queryKey: ['client-documents'] });
       toast.success('Document uploaded successfully');
       setIsUploading(false);
@@ -105,30 +92,21 @@ export const useDocumentOperations = (clientId: string) => {
         throw new Error('User must be logged in to delete documents');
       }
 
-      console.log('Starting document deletion:', documentId);
       const document = documents?.find(d => d.id === documentId);
       if (!document) throw new Error('Document not found');
 
-      console.log('Deleting from storage:', document.file_path);
       const { error: storageError } = await supabase.storage
         .from('client_documents')
         .remove([document.file_path]);
 
-      if (storageError) {
-        console.error('Storage deletion error:', storageError);
-        throw storageError;
-      }
+      if (storageError) throw storageError;
 
-      console.log('Deleting from database');
       const { error: dbError } = await supabase
         .from('client_documents')
         .delete()
         .eq('id', documentId);
 
-      if (dbError) {
-        console.error('Database deletion error:', dbError);
-        throw dbError;
-      }
+      if (dbError) throw dbError;
 
       await supabase.from('client_activities').insert({
         client_id: clientId,
@@ -138,7 +116,6 @@ export const useDocumentOperations = (clientId: string) => {
       });
     },
     onSuccess: () => {
-      console.log('Deletion completed successfully');
       queryClient.invalidateQueries({ queryKey: ['client-documents'] });
       toast.success('Document deleted successfully');
     },

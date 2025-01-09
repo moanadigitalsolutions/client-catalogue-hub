@@ -1,13 +1,9 @@
 import { TableCell, TableRow } from "@/components/ui/table";
 import { DocumentActions } from "./DocumentActions";
-import { supabase } from "@/lib/supabase";
-import { toast } from "sonner";
-import { format } from "date-fns";
-import { DocumentRowProps } from "@/types/documents";
-import { useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { FileText, Image as ImageIcon } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { DocumentRowProps } from "@/types/documents";
+import { useDocumentPreview } from "@/hooks/useDocumentPreview";
+import { DocumentPreviewDialog } from "./DocumentPreviewDialog";
 
 export const DocumentRow = ({
   document: clientDocument,
@@ -20,82 +16,25 @@ export const DocumentRow = ({
   onDeleteRequest,
   isPending,
 }: DocumentRowProps) => {
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const { user } = useAuth();
+  const {
+    previewOpen,
+    setPreviewOpen,
+    previewUrl,
+    handlePreview
+  } = useDocumentPreview();
 
   const isImage = clientDocument.content_type.startsWith('image/');
-
-  const handlePreview = async () => {
-    try {
-      if (!user) {
-        toast.error('You must be logged in to preview documents');
-        return;
-      }
-
-      console.log('Fetching document for preview:', clientDocument.file_path);
-      const { data, error } = await supabase.storage
-        .from('client_documents')
-        .createSignedUrl(clientDocument.file_path, 3600); // URL valid for 1 hour
-
-      if (error) {
-        console.error('Preview error:', error);
-        throw error;
-      }
-
-      if (isImage) {
-        setPreviewUrl(data.signedUrl);
-        setPreviewOpen(true);
-      } else {
-        // For non-image files, trigger download
-        handleDownload();
-      }
-    } catch (error) {
-      console.error('Preview error:', error);
-      toast.error('Failed to preview document');
-    }
-  };
-
-  const handleDownload = async () => {
-    try {
-      if (!user) {
-        toast.error('You must be logged in to download documents');
-        return;
-      }
-
-      console.log('Downloading document:', clientDocument.file_path);
-      const { data, error } = await supabase.storage
-        .from('client_documents')
-        .download(clientDocument.file_path);
-
-      if (error) {
-        console.error('Download error:', error);
-        throw error;
-      }
-
-      // Create a download link
-      const url = window.URL.createObjectURL(data);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = clientDocument.filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      
-      console.log('Download completed successfully');
-    } catch (error) {
-      console.error('Download error:', error);
-      toast.error('Failed to download document');
-    }
-  };
 
   return (
     <>
       <TableRow key={clientDocument.id}>
         <TableCell className="font-medium">
           <button
-            onClick={handlePreview}
+            onClick={() => handlePreview(
+              clientDocument.file_path,
+              isImage,
+              clientDocument.filename
+            )}
             className="text-left hover:underline text-primary inline-flex items-center gap-2"
           >
             {isImage ? (
@@ -122,17 +61,12 @@ export const DocumentRow = ({
         </TableCell>
       </TableRow>
 
-      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-3xl">
-          {previewUrl && isImage && (
-            <img 
-              src={previewUrl} 
-              alt={clientDocument.filename}
-              className="w-full h-auto rounded-lg"
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      <DocumentPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        previewUrl={previewUrl}
+        filename={clientDocument.filename}
+      />
     </>
   );
 };
