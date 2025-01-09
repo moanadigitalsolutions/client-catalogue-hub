@@ -46,16 +46,18 @@ export const DataPreview = ({ selectedFields, fields, dateRange }: DataPreviewPr
         throw error;
       }
 
+      if (!data) return [];
+
       // Map dob back to birth_date in the results if needed
-      return (data as ClientRow[]).map(row => {
-        if (selectedFields.includes('birth_date') && 'dob' in row) {
-          const { dob, ...rest } = row;
-          return {
-            ...rest,
-            birth_date: dob
-          };
+      return (data as unknown as ClientRow[]).map(row => {
+        if (!row) return {};
+        
+        const newRow = { ...row };
+        if (selectedFields.includes('birth_date') && 'dob' in newRow) {
+          newRow.birth_date = newRow.dob;
+          delete newRow.dob;
         }
-        return row;
+        return newRow;
       });
     },
     enabled: selectedFields.length > 0,
