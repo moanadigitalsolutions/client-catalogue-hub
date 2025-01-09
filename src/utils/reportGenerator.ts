@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { supabase } from "@/lib/supabase";
-import { PostgrestResponse, PostgrestFilterBuilder } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 // Extend jsPDF type to include autoTable
 declare module 'jspdf' {
@@ -71,7 +71,7 @@ export const generateReport = async (format: "pdf" | "excel", params: ReportPara
   const queryFields = params.fields.map(field => field === 'birth_date' ? 'dob' : field);
   
   // Fetch data from Supabase based on selected fields
-  let query: PostgrestFilterBuilder<any, any, ClientData[]> = supabase
+  let query = supabase
     .from('clients')
     .select(queryFields.join(','));
 
