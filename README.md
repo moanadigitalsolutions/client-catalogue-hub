@@ -4,6 +4,99 @@
 
 **URL**: https://lovable.dev/projects/bcf2f7b7-5a83-4108-b76d-6001a1f9c58c
 
+## Deployment Instructions
+
+### Prerequisites
+
+1. Node.js version 18 or higher
+2. npm (Node Package Manager)
+3. Git
+
+### Environment Setup
+
+The following environment variables need to be configured:
+
+```
+VITE_SUPABASE_URL=https://ffamaeearrzchaxuamcl.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmYW1hZWVhcnJ6Y2hheHVhbWNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYzMzc3NTUsImV4cCI6MjA1MTkxMzc1NX0.BlU9-Xq9H-Z5eQ36XELQSryEeb1WQxeEui3pJrwLeiQ
+```
+
+### Deployment Steps
+
+1. **Clone the Repository**
+```sh
+git clone <repository-url>
+cd <project-directory>
+```
+
+2. **Install Dependencies**
+```sh
+npm install
+```
+
+3. **Build the Project**
+```sh
+npm run build
+```
+This will create a `dist` directory with the production build.
+
+4. **Serve the Build**
+The `dist` directory contains static files that can be served by any web server.
+
+### Platform-Specific Instructions
+
+#### Netlify
+1. Connect your repository to Netlify
+2. Set build command: `npm run build`
+3. Set publish directory: `dist`
+4. Add environment variables in Netlify dashboard
+5. Deploy
+
+#### Vercel
+1. Import your repository to Vercel
+2. Framework preset: Vite
+3. Build command: `npm run build`
+4. Output directory: `dist`
+5. Add environment variables in Vercel dashboard
+6. Deploy
+
+#### AWS S3 + CloudFront
+1. Create an S3 bucket
+2. Enable static website hosting
+3. Upload the contents of `dist` directory
+4. Configure CloudFront distribution
+5. Point your domain to CloudFront
+
+### Post-Deployment Checklist
+
+1. Verify all environment variables are set correctly
+2. Test authentication flows
+3. Confirm file uploads are working
+4. Check all API endpoints are accessible
+5. Verify SSL/HTTPS is properly configured
+6. Test user roles and permissions
+
+### Troubleshooting
+
+Common issues and solutions:
+
+1. **404 errors on refresh**: Add proper redirect rules
+   - For Netlify: Add `_redirects` file in public directory with:
+     ```
+     /* /index.html 200
+     ```
+   - For Vercel: Add `vercel.json` with:
+     ```json
+     {
+       "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+     }
+     ```
+
+2. **CORS issues**: Verify Supabase project settings
+3. **Authentication errors**: Check environment variables
+
+For additional support, contact the development team.
+
 ## How can I edit this code?
 
 There are several ways of editing your application.
@@ -36,29 +129,16 @@ npm i
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
 ## What technologies are used for this project?
 
-This project is built with .
+This project is built with:
 
 - Vite
 - TypeScript
 - React
 - shadcn-ui
 - Tailwind CSS
+- Supabase
 
 ## How can I deploy this project?
 
