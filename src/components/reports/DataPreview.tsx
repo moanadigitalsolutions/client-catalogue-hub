@@ -18,9 +18,13 @@ export const DataPreview = ({ selectedFields, fields, dateRange }: DataPreviewPr
       console.log("Fetching preview data with fields:", selectedFields);
       if (selectedFields.length === 0) return [];
 
+      // Map birth_date to dob for the database query
+      const mappedFields = selectedFields.map(field => field === 'birth_date' ? 'dob' : field);
+      console.log("Mapped fields for query:", mappedFields);
+
       let query = supabase
         .from('clients')
-        .select(selectedFields.join(','))
+        .select(mappedFields.join(','))
         .limit(20);
 
       if (dateRange?.from && dateRange?.to) {
@@ -36,7 +40,17 @@ export const DataPreview = ({ selectedFields, fields, dateRange }: DataPreviewPr
         throw error;
       }
 
-      return data || [];
+      // Map dob back to birth_date in the results if needed
+      return (data || []).map(row => {
+        if (selectedFields.includes('birth_date') && row.dob) {
+          const { dob, ...rest } = row;
+          return {
+            ...rest,
+            birth_date: dob
+          };
+        }
+        return row;
+      });
     },
     enabled: selectedFields.length > 0,
   });
