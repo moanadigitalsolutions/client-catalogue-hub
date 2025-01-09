@@ -1,47 +1,41 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: left;
-}
-
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+@layer components {
+  .card {
+    @apply bg-card text-card-foreground rounded-lg border shadow-sm hover:shadow-md transition-shadow duration-200;
   }
-  to {
-    transform: rotate(360deg);
+
+  .container {
+    @apply mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl;
   }
-}
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background;
   }
-}
 
-.card {
-  padding: 2em;
-  background-color: theme('colors.neutral.lightest');
-  border-radius: theme('borderRadius.lg');
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90;
+  }
 
-.read-the-docs {
-  color: theme('colors.neutral.DEFAULT');
+  .input {
+    @apply flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .dashboard-card {
+    @apply p-6 rounded-xl border bg-card shadow-sm hover:shadow-md transition-all duration-200;
+  }
+
+  .metric-card {
+    @apply p-6 rounded-xl border bg-gradient-to-br from-card to-background shadow-sm hover:shadow-md transition-all duration-200;
+  }
+
+  .sidebar {
+    @apply bg-sidebar text-sidebar-foreground border-r border-sidebar-border;
+  }
+
+  .nav-item {
+    @apply flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground;
+  }
+
+  .nav-item-active {
+    @apply bg-sidebar-primary text-sidebar-primary-foreground;
+  }
 }
