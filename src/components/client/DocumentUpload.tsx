@@ -25,29 +25,40 @@ export const DocumentUpload = ({ clientId }: { clientId: string }) => {
   const { data: documents, isLoading } = useQuery({
     queryKey: ['client-documents', clientId],
     queryFn: async () => {
+      console.log('Fetching documents for client:', clientId);
       const { data, error } = await supabase
         .from('client_documents')
         .select('*')
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching documents:', error);
+        throw error;
+      }
+      console.log('Fetched documents:', data);
       return data as Document[];
     },
   });
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
+      console.log('Starting file upload:', file.name);
       setIsUploading(true);
       const filename = `${Date.now()}-${file.name}`;
       const filePath = `clients/${clientId}/${filename}`;
 
+      console.log('Uploading to storage with path:', filePath);
       const { error: uploadError } = await supabase.storage
-        .from('documents')
+        .from('client_documents')
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw uploadError;
+      }
 
+      console.log('File uploaded successfully, saving to database');
       const { error: dbError } = await supabase
         .from('client_documents')
         .insert({
@@ -58,7 +69,10 @@ export const DocumentUpload = ({ clientId }: { clientId: string }) => {
           file_path: filePath,
         });
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error('Database insert error:', dbError);
+        throw dbError;
+      }
 
       // Record the activity
       await supabase.from('client_activities').insert({
@@ -68,6 +82,7 @@ export const DocumentUpload = ({ clientId }: { clientId: string }) => {
       });
     },
     onSuccess: () => {
+      console.log('Upload completed successfully');
       queryClient.invalidateQueries({ queryKey: ['client-documents'] });
       toast.success('Document uploaded successfully');
       setIsUploading(false);
@@ -81,21 +96,30 @@ export const DocumentUpload = ({ clientId }: { clientId: string }) => {
 
   const deleteMutation = useMutation({
     mutationFn: async (documentId: string) => {
+      console.log('Starting document deletion:', documentId);
       const document = documents?.find(d => d.id === documentId);
       if (!document) throw new Error('Document not found');
 
+      console.log('Deleting from storage:', document.file_path);
       const { error: storageError } = await supabase.storage
-        .from('documents')
+        .from('client_documents')
         .remove([document.file_path]);
 
-      if (storageError) throw storageError;
+      if (storageError) {
+        console.error('Storage deletion error:', storageError);
+        throw storageError;
+      }
 
+      console.log('Deleting from database');
       const { error: dbError } = await supabase
         .from('client_documents')
         .delete()
         .eq('id', documentId);
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error('Database deletion error:', dbError);
+        throw dbError;
+      }
 
       // Record the activity
       await supabase.from('client_activities').insert({
@@ -105,6 +129,7 @@ export const DocumentUpload = ({ clientId }: { clientId: string }) => {
       });
     },
     onSuccess: () => {
+      console.log('Deletion completed successfully');
       queryClient.invalidateQueries({ queryKey: ['client-documents'] });
       toast.success('Document deleted successfully');
     },
