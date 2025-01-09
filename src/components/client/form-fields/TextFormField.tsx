@@ -17,6 +17,19 @@ interface TextFormFieldProps {
 export const TextFormField = ({ field, form }: TextFormFieldProps) => {
   console.log('Rendering text form field:', field);
   
+  const inputType = (() => {
+    switch (field.type) {
+      case "url":
+        return "url";
+      case "email":
+        return "email";
+      case "phone":
+        return "tel";
+      default:
+        return "text";
+    }
+  })();
+
   return (
     <FormField
       control={form.control}
@@ -27,7 +40,7 @@ export const TextFormField = ({ field, form }: TextFormFieldProps) => {
           <FormControl>
             <Input
               {...formField}
-              type={field.type === "url" ? "url" : "text"}
+              type={inputType}
               placeholder={`Enter ${field.label.toLowerCase()}`}
             />
           </FormControl>

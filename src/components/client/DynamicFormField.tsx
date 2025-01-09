@@ -26,8 +26,12 @@ export const DynamicFormField = ({ field, form }: DynamicFormFieldProps) => {
       case "radio":
         return <RadioFormField field={field} form={form} />;
       case "url":
+      case "email":
+      case "phone":
+      case "text":
         return <TextFormField field={field} form={form} />;
       default:
+        console.log('Using default text form field for type:', field.type);
         return <TextFormField field={field} form={form} />;
     }
   })();
