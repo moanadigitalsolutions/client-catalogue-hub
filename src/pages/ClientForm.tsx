@@ -56,6 +56,11 @@ const ClientForm = () => {
         return null;
       }
 
+      // Map dob to birth_date for the form
+      if (data.dob) {
+        data.birth_date = data.dob;
+      }
+
       console.log('Client details:', data);
       form.reset(data);
       return data;
@@ -67,14 +72,20 @@ const ClientForm = () => {
     mutationFn: async (data: ClientFormData) => {
       console.log('Saving client data:', data);
       
+      // Map birth_date to dob for database
+      const dbData = { ...data };
+      if (dbData.birth_date) {
+        dbData.dob = dbData.birth_date;
+        delete dbData.birth_date;
+      }
+      
       if (isEditing) {
         const { error } = await supabase
           .from('clients')
-          .update(data)
+          .update(dbData)
           .eq('id', id);
         if (error) throw error;
 
-        // Record the update activity
         await supabase.from('client_activities').insert({
           client_id: id,
           activity_type: 'updated',
@@ -83,12 +94,11 @@ const ClientForm = () => {
       } else {
         const { data: newClient, error } = await supabase
           .from('clients')
-          .insert([data])
+          .insert([dbData])
           .select()
           .single();
         if (error) throw error;
 
-        // Record the creation activity
         await supabase.from('client_activities').insert({
           client_id: newClient.id,
           activity_type: 'created',
