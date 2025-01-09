@@ -1,34 +1,30 @@
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DynamicFormField } from "@/components/client/DynamicFormField";
 import { ClientFormHeader } from "@/components/client/ClientFormHeader";
 import { DocumentUpload } from "@/components/client/DocumentUpload";
 import { ClientHistory } from "@/components/client/ClientHistory";
 import { useFormFields } from "@/hooks/useFormFields";
 import { useFormFieldsSubscription } from "@/hooks/useFormFieldsSubscription";
+import { useClientMutations } from "@/hooks/useClientMutations";
 import { supabase } from "@/lib/supabase";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserCircle, FileText, History } from "lucide-react";
-
-interface ClientFormData {
-  [key: string]: any;
-}
+import { ClientFormFields } from "@/components/client/ClientFormFields";
 
 const ClientForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const isEditing = Boolean(id);
   const { fields } = useFormFields();
+  const mutation = useClientMutations(id);
   
   useFormFieldsSubscription();
 
-  const form = useForm<ClientFormData>({
+  const form = useForm({
     defaultValues: {},
   });
 
@@ -46,12 +42,10 @@ const ClientForm = () => {
 
       if (error) {
         console.error('Error fetching client:', error);
-        toast.error('Failed to fetch client details');
         throw error;
       }
 
       if (!data) {
-        toast.error('Client not found');
         navigate('/clients');
         return null;
       }
@@ -68,76 +62,9 @@ const ClientForm = () => {
     enabled: isEditing,
   });
 
-  const mutation = useMutation({
-    mutationFn: async (data: ClientFormData) => {
-      console.log('Saving client data:', data);
-      
-      // Map birth_date to dob for database
-      const dbData = { ...data };
-      if (dbData.birth_date) {
-        dbData.dob = dbData.birth_date;
-        delete dbData.birth_date;
-      }
-      
-      if (isEditing) {
-        const { error } = await supabase
-          .from('clients')
-          .update(dbData)
-          .eq('id', id);
-        if (error) throw error;
-
-        await supabase.from('client_activities').insert({
-          client_id: id,
-          activity_type: 'updated',
-          description: 'Client information updated'
-        });
-      } else {
-        const { data: newClient, error } = await supabase
-          .from('clients')
-          .insert([dbData])
-          .select()
-          .single();
-        if (error) throw error;
-
-        await supabase.from('client_activities').insert({
-          client_id: newClient.id,
-          activity_type: 'created',
-          description: 'Client profile created'
-        });
-      }
-    },
-    onSuccess: () => {
-      console.log('Client saved successfully');
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
-      toast.success(`Client ${isEditing ? 'updated' : 'created'} successfully`);
-      navigate('/clients');
-    },
-    onError: (error) => {
-      console.error('Error saving client:', error);
-      toast.error(`Failed to ${isEditing ? 'update' : 'create'} client`);
-    },
-  });
-
-  const onSubmit = (data: ClientFormData) => {
-    mutation.mutate(data);
-  };
-
   if (isLoading) {
     return <div className="flex items-center justify-center p-8">Loading client details...</div>;
   }
-
-  const personalFields = fields.filter(f => 
-    ['name', 'email', 'phone', 'gender', 'qualification', 'website'].includes(f.field_id)
-  );
-  
-  const addressFields = fields.filter(f => 
-    ['street', 'suburb', 'city', 'postcode'].includes(f.field_id)
-  );
-
-  const otherFields = fields.filter(f => 
-    !personalFields.map(p => p.field_id).includes(f.field_id) &&
-    !addressFields.map(a => a.field_id).includes(f.field_id)
-  );
 
   return (
     <div className="container max-w-3xl space-y-6 p-4">
@@ -170,41 +97,9 @@ const ClientForm = () => {
 
             <TabsContent value="personal">
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="grid gap-4 md:grid-cols-2">
-                      {personalFields.map((field) => (
-                        <DynamicFormField
-                          key={field.id}
-                          field={field}
-                          form={form}
-                        />
-                      ))}
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      {addressFields.map((field) => (
-                        <DynamicFormField
-                          key={field.id}
-                          field={field}
-                          form={form}
-                        />
-                      ))}
-                    </div>
-
-                    {otherFields.length > 0 && (
-                      <div className="grid gap-4 md:grid-cols-2">
-                        {otherFields.map((field) => (
-                          <DynamicFormField
-                            key={field.id}
-                            field={field}
-                            form={form}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
+                <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-6">
+                  <ClientFormFields form={form} fields={fields} />
+                  
                   <div className="flex justify-end space-x-4">
                     <Button
                       type="button"
