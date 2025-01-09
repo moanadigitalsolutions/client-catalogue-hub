@@ -63,23 +63,19 @@ export const UserList = () => {
         return;
       }
 
-      // First try to delete the user role
+      // First delete from user_roles
       const { error: roleError } = await supabase
         .from('user_roles')
         .delete()
         .eq('user_id', userId);
 
       if (roleError) {
-        if (roleError.message.includes('Cannot delete the last admin user')) {
-          toast.error('Cannot delete the last admin user');
-        } else {
-          console.error('Error deleting user role:', roleError);
-          toast.error('Failed to delete user');
-        }
+        console.error('Error deleting user role:', roleError);
+        toast.error('Failed to delete user');
         return;
       }
 
-      // If role deletion succeeded, proceed with profile deletion
+      // Then delete from profiles
       const { error: profileError } = await supabase
         .from('profiles')
         .delete()
@@ -91,7 +87,17 @@ export const UserList = () => {
         return;
       }
 
+      // Finally delete from auth.users using Supabase admin API
+      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+
+      if (authError) {
+        console.error('Error deleting auth user:', authError);
+        toast.error('Failed to delete user');
+        return;
+      }
+
       toast.success('User deleted successfully');
+      // Refresh the users list after successful deletion
       refetch();
     } catch (error) {
       console.error('Error in handleDeleteUser:', error);
