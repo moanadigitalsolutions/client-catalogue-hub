@@ -20,29 +20,32 @@ export const UserList = () => {
     queryFn: async () => {
       console.log('Fetching users...');
       
-      // First, get all profiles with their roles
-      const { data: profilesWithRoles, error: profilesError } = await supabase
+      // First, get all profiles
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select(`
-          id,
-          name,
-          email,
-          user_roles (
-            role
-          )
-        `);
+        .select('id, name, email');
 
       if (profilesError) {
         console.error('Error fetching profiles:', profilesError);
         throw profilesError;
       }
 
-      // Transform the data to match our expected format
-      const transformedData = profilesWithRoles.map(profile => ({
+      // Then get their roles
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+
+      if (rolesError) {
+        console.error('Error fetching user roles:', rolesError);
+        throw rolesError;
+      }
+
+      // Combine the data
+      const transformedData = profiles.map(profile => ({
         id: profile.id,
         name: profile.name || 'Unnamed User',
         email: profile.email || 'No email',
-        role: profile.user_roles?.[0]?.role || 'employee'
+        role: userRoles.find(role => role.user_id === profile.id)?.role || 'employee'
       }));
 
       console.log('Transformed user data:', transformedData);
