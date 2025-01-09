@@ -6,6 +6,7 @@ import { LogOut } from "lucide-react";
 import AppSidebar from "./AppSidebar";
 import { Breadcrumbs } from "./Breadcrumbs";
 import { HelpGuide } from "./HelpGuide";
+import UserBadge from "./dashboard/UserBadge";
 
 const Layout = () => {
   const { signOut } = useAuth();
@@ -15,12 +16,15 @@ const Layout = () => {
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <main className="flex-1 p-6">
-          <div className="flex justify-between items-start mb-4">
+          <div className="flex justify-between items-center mb-4">
             <Breadcrumbs />
-            <Button variant="ghost" onClick={signOut}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
+            <div className="flex items-center gap-4">
+              <UserBadge />
+              <Button variant="ghost" onClick={signOut}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
+            </div>
           </div>
           <div className="grid gap-6">
             <Outlet />

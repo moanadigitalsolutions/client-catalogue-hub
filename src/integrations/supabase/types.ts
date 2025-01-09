@@ -163,6 +163,7 @@ export type Database = {
           phone: string | null
           postcode: string | null
           qualification: string | null
+          sexy: string | null
           street: string | null
           suburb: string | null
           test_1: string | null
@@ -180,6 +181,7 @@ export type Database = {
           phone?: string | null
           postcode?: string | null
           qualification?: string | null
+          sexy?: string | null
           street?: string | null
           suburb?: string | null
           test_1?: string | null
@@ -197,6 +199,7 @@ export type Database = {
           phone?: string | null
           postcode?: string | null
           qualification?: string | null
+          sexy?: string | null
           street?: string | null
           suburb?: string | null
           test_1?: string | null
