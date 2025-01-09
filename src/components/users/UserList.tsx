@@ -20,33 +20,33 @@ export const UserList = () => {
     queryFn: async () => {
       console.log('Fetching users...');
       
-      // First, get all profiles
-      const { data: profiles, error: profilesError } = await supabase
+      // First, get all profiles with their roles
+      const { data: profilesWithRoles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, name, email');
+        .select(`
+          id,
+          name,
+          email,
+          user_roles (
+            role
+          )
+        `);
 
       if (profilesError) {
         console.error('Error fetching profiles:', profilesError);
         throw profilesError;
       }
 
-      // Then, get all user roles
-      const { data: userRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id, role');
-
-      if (rolesError) {
-        console.error('Error fetching user roles:', rolesError);
-        throw rolesError;
-      }
-
-      // Combine the data
-      const combinedData = profiles.map(profile => ({
-        ...profile,
-        role: userRoles.find(role => role.user_id === profile.id)?.role || 'employee'
+      // Transform the data to match our expected format
+      const transformedData = profilesWithRoles.map(profile => ({
+        id: profile.id,
+        name: profile.name || 'Unnamed User',
+        email: profile.email || 'No email',
+        role: profile.user_roles?.[0]?.role || 'employee'
       }));
 
-      return combinedData || [];
+      console.log('Transformed user data:', transformedData);
+      return transformedData;
     },
   });
 
@@ -60,7 +60,7 @@ export const UserList = () => {
         return;
       }
 
-      // First try to delete the user role (this will trigger our prevent_delete_last_admin trigger)
+      // First try to delete the user role
       const { error: roleError } = await supabase
         .from('user_roles')
         .delete()
@@ -76,11 +76,14 @@ export const UserList = () => {
         return;
       }
 
-      // If role deletion succeeded, proceed with auth user deletion
-      const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
+      // If role deletion succeeded, proceed with profile deletion
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
 
-      if (deleteError) {
-        console.error('Error deleting user:', deleteError);
+      if (profileError) {
+        console.error('Error deleting profile:', profileError);
         toast.error('Failed to delete user');
         return;
       }
