@@ -104,7 +104,7 @@ export const generateReport = async (format: "pdf" | "excel", params: ReportPara
   }
 
   // Map dob back to birth_date in the results if needed
-  const mappedData = data.map((row: ClientData) => {
+  const mappedData = (data as ClientData[]).map((row: ClientData) => {
     if (!row) return {};
     
     const newRow = { ...row };
