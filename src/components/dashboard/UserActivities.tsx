@@ -17,7 +17,7 @@ const UserActivities = () => {
         .from('user_activities')
         .select(`
           *,
-          profiles:profiles(name)
+          profiles (name)
         `)
         .order('created_at', { ascending: false })
         .limit(10);
@@ -27,6 +27,7 @@ const UserActivities = () => {
         throw error;
       }
 
+      console.log('Fetched activities:', data);
       return data;
     },
   });
