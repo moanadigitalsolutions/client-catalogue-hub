@@ -44,12 +44,25 @@ export const TextFormField = ({ field, form }: TextFormFieldProps) => {
     }
   };
 
+  const getInputPattern = () => {
+    switch (field.type) {
+      case "phone":
+        return "[0-9+()-\\s]*"; // Allow digits, +, (), - and spaces
+      default:
+        return undefined;
+    }
+  };
+
   return (
     <FormField
       control={form.control}
       name={field.field_id}
       rules={{
-        validate: handleUrlValidation
+        validate: handleUrlValidation,
+        pattern: field.type === "phone" ? {
+          value: /^[0-9+()-\s]*$/,
+          message: "Please enter a valid phone number"
+        } : undefined
       }}
       render={({ field: formField }) => (
         <FormItem>
@@ -58,11 +71,16 @@ export const TextFormField = ({ field, form }: TextFormFieldProps) => {
             <Input
               {...formField}
               type={inputType}
+              pattern={getInputPattern()}
               placeholder={`Enter ${field.label.toLowerCase()}`}
+              className="h-10 px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               onChange={(e) => {
                 let value = e.target.value;
                 if (field.type === "url" && value && !value.match(/^https?:\/\//)) {
-                  // Only add http:// when saving/submitting, not during typing
+                  formField.onChange(value);
+                } else if (field.type === "phone") {
+                  // Format phone number as user types
+                  value = value.replace(/[^\d+()-\s]/g, '');
                   formField.onChange(value);
                 } else {
                   formField.onChange(value);

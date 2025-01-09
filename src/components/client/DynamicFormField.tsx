@@ -5,6 +5,7 @@ import { TextareaFormField } from "./form-fields/TextareaFormField";
 import { CheckboxFormField } from "./form-fields/CheckboxFormField";
 import { SelectFormField } from "./form-fields/SelectFormField";
 import { RadioFormField } from "./form-fields/RadioFormField";
+import { DateFormField } from "./form-fields/DateFormField";
 import { FieldDescription } from "./FieldDescription";
 
 interface DynamicFormFieldProps {
@@ -25,6 +26,8 @@ export const DynamicFormField = ({ field, form }: DynamicFormFieldProps) => {
         return <SelectFormField field={field} form={form} />;
       case "radio":
         return <RadioFormField field={field} form={form} />;
+      case "date":
+        return <DateFormField field={field} form={form} />;
       case "url":
       case "email":
       case "phone":
