@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
 export const HelpGuide = () => {
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
 
   if (!isVisible) {
     return (
