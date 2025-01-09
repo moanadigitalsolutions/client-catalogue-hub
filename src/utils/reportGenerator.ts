@@ -53,7 +53,7 @@ const generatePDF = (data: ClientData[], fields: string[]) => {
   
   // Generate table
   doc.autoTable({
-    head: [fields], // Keep original field names for headers
+    head: [fields],
     body: tableData,
     startY: 35,
     margin: { top: 30 },
@@ -73,7 +73,7 @@ export const generateReport = async (format: "pdf" | "excel", params: ReportPara
   // Fetch data from Supabase based on selected fields
   let query = supabase
     .from('clients')
-    .select<'clients', ClientData>(queryFields.join(','));
+    .select(queryFields.join(',')) as PostgrestResponse<ClientData>;
 
   // Apply date range filter if provided
   if (params.dateRange?.from && params.dateRange?.to) {
@@ -103,7 +103,7 @@ export const generateReport = async (format: "pdf" | "excel", params: ReportPara
     throw new Error('No data returned from query');
   }
 
-  // Map dob back to birth_date in the results
+  // Map dob back to birth_date in the results if needed
   const mappedData = data.map((row: ClientData) => {
     if (!row) return {};
     
