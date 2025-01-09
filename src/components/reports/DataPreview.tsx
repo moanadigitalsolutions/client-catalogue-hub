@@ -11,6 +11,12 @@ interface DataPreviewProps {
   dateRange?: DateRange;
 }
 
+// Define the shape of our data row
+interface ClientRow {
+  [key: string]: string | number | boolean | null;
+  dob?: string;
+}
+
 export const DataPreview = ({ selectedFields, fields, dateRange }: DataPreviewProps) => {
   const { data: previewData, isLoading } = useQuery({
     queryKey: ['preview-data', selectedFields, dateRange],
@@ -41,8 +47,8 @@ export const DataPreview = ({ selectedFields, fields, dateRange }: DataPreviewPr
       }
 
       // Map dob back to birth_date in the results if needed
-      return (data || []).map(row => {
-        if (selectedFields.includes('birth_date') && row.dob) {
+      return (data as ClientRow[]).map(row => {
+        if (selectedFields.includes('birth_date') && 'dob' in row) {
           const { dob, ...rest } = row;
           return {
             ...rest,
