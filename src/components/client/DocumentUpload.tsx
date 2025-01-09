@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { Upload } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { DocumentList } from "./DocumentList";
-import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { formatFileSize } from "@/lib/utils";
+import { format } from "date-fns";
 
 interface Document {
   id: string;
@@ -19,99 +19,112 @@ interface Document {
 }
 
 export const DocumentUpload = ({ clientId }: { clientId: string }) => {
-  const [file, setFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
-  const { data: documents = [], isLoading } = useQuery({
-    queryKey: ['clientDocuments', clientId],
+  const { data: documents, isLoading } = useQuery({
+    queryKey: ['client-documents', clientId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('client_documents')
         .select('*')
-        .eq('client_id', clientId);
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching documents:', error);
-        toast.error('Failed to load documents');
-        throw error;
-      }
-
+      if (error) throw error;
       return data as Document[];
     },
-    enabled: !!clientId,
   });
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
-      if (!user) throw new Error('User not authenticated');
+      setIsUploading(true);
+      const filename = `${Date.now()}-${file.name}`;
+      const filePath = `clients/${clientId}/${filename}`;
 
-      const timestamp = new Date().toISOString();
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${clientId}/${timestamp}-${crypto.randomUUID()}.${fileExt}`;
-
-      console.log('Uploading file to storage:', { filePath, fileType: file.type });
       const { error: uploadError } = await supabase.storage
-        .from('client_documents')
+        .from('documents')
         .upload(filePath, file);
 
-      if (uploadError) {
-        console.error('Storage upload error:', uploadError);
-        throw uploadError;
-      }
+      if (uploadError) throw uploadError;
 
-      console.log('File uploaded successfully, saving metadata to database');
       const { error: dbError } = await supabase
         .from('client_documents')
         .insert({
           client_id: clientId,
           filename: file.name,
-          file_path: filePath,
           content_type: file.type,
           size: file.size,
-          uploaded_by: user.id,
+          file_path: filePath,
         });
 
-      if (dbError) {
-        console.error('Database insert error:', dbError);
-        throw dbError;
-      }
+      if (dbError) throw dbError;
+
+      // Record the activity
+      await supabase.from('client_activities').insert({
+        client_id: clientId,
+        activity_type: 'document_added',
+        description: `Document "${file.name}" was uploaded`
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clientDocuments', clientId] });
+      queryClient.invalidateQueries({ queryKey: ['client-documents'] });
       toast.success('Document uploaded successfully');
-      setFile(null);
+      setIsUploading(false);
     },
     onError: (error) => {
       console.error('Upload error:', error);
       toast.error('Failed to upload document');
+      setIsUploading(false);
     },
   });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-    }
-  };
+  const deleteMutation = useMutation({
+    mutationFn: async (documentId: string) => {
+      const document = documents?.find(d => d.id === documentId);
+      if (!document) throw new Error('Document not found');
 
-  const handleUpload = () => {
+      const { error: storageError } = await supabase.storage
+        .from('documents')
+        .remove([document.file_path]);
+
+      if (storageError) throw storageError;
+
+      const { error: dbError } = await supabase
+        .from('client_documents')
+        .delete()
+        .eq('id', documentId);
+
+      if (dbError) throw dbError;
+
+      // Record the activity
+      await supabase.from('client_activities').insert({
+        client_id: clientId,
+        activity_type: 'document_removed',
+        description: `Document "${document.filename}" was removed`
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['client-documents'] });
+      toast.success('Document deleted successfully');
+    },
+    onError: (error) => {
+      console.error('Delete error:', error);
+      toast.error('Failed to delete document');
+    },
+  });
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (file) {
       uploadMutation.mutate(file);
     }
   };
 
-  const formatFileSize = (bytes: number) => {
-    const units = ['B', 'KB', 'MB', 'GB'];
-    let size = bytes;
-    let unitIndex = 0;
-    
-    while (size >= 1024 && unitIndex < units.length - 1) {
-      size /= 1024;
-      unitIndex++;
+  const handleDelete = (documentId: string) => {
+    if (window.confirm('Are you sure you want to delete this document?')) {
+      deleteMutation.mutate(documentId);
     }
-    
-    return `${size.toFixed(1)} ${units[unitIndex]}`;
   };
 
   if (isLoading) {
@@ -120,26 +133,51 @@ export const DocumentUpload = ({ clientId }: { clientId: string }) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-end gap-4">
-        <div className="grid w-full max-w-sm items-center gap-1.5">
-          <Label htmlFor="document">Upload Document</Label>
-          <Input
-            id="document"
-            type="file"
-            accept=".pdf,.xlsx,.xls,.doc,.docx,.jpeg,.jpg,.png"
-            onChange={handleFileChange}
-          />
-        </div>
-        <Button
-          onClick={handleUpload}
-          disabled={!file || uploadMutation.isPending}
-        >
-          <Upload className="h-4 w-4 mr-2" />
-          Upload
-        </Button>
+      <div>
+        <Input
+          type="file"
+          onChange={handleFileChange}
+          disabled={isUploading}
+          className="max-w-sm"
+        />
+        <p className="text-sm text-muted-foreground mt-2">
+          Upload client-related documents here
+        </p>
       </div>
 
-      <DocumentList documents={documents} formatFileSize={formatFileSize} />
+      <ScrollArea className="h-[300px]">
+        <div className="space-y-2">
+          {documents?.map((doc) => (
+            <div
+              key={doc.id}
+              className="flex items-center justify-between p-2 border rounded-lg"
+            >
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{doc.filename}</p>
+                <div className="flex gap-2 text-sm text-muted-foreground">
+                  <span>{formatFileSize(doc.size)}</span>
+                  <span>•</span>
+                  <span>{format(new Date(doc.created_at), 'MMM d, yyyy')}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 ml-4">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleDelete(doc.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ))}
+          {(!documents || documents.length === 0) && (
+            <p className="text-center text-sm text-muted-foreground py-4">
+              No documents uploaded yet
+            </p>
+          )}
+        </div>
+      </ScrollArea>
     </div>
   );
 };

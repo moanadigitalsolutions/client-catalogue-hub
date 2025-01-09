@@ -7,12 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DynamicFormField } from "@/components/client/DynamicFormField";
 import { ClientFormHeader } from "@/components/client/ClientFormHeader";
 import { DocumentUpload } from "@/components/client/DocumentUpload";
+import { ClientHistory } from "@/components/client/ClientHistory";
 import { useFormFields } from "@/hooks/useFormFields";
 import { useFormFieldsSubscription } from "@/hooks/useFormFieldsSubscription";
 import { supabase } from "@/lib/supabase";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserCircle, FileText } from "lucide-react";
+import { UserCircle, FileText, History } from "lucide-react";
 
 interface ClientFormData {
   [key: string]: any;
@@ -25,14 +26,12 @@ const ClientForm = () => {
   const isEditing = Boolean(id);
   const { fields } = useFormFields();
   
-  // Subscribe to form fields changes
   useFormFieldsSubscription();
 
   const form = useForm<ClientFormData>({
     defaultValues: {},
   });
 
-  // Fetch client data if editing
   const { isLoading } = useQuery({
     queryKey: ['client', id],
     queryFn: async () => {
@@ -74,11 +73,27 @@ const ClientForm = () => {
           .update(data)
           .eq('id', id);
         if (error) throw error;
+
+        // Record the update activity
+        await supabase.from('client_activities').insert({
+          client_id: id,
+          activity_type: 'updated',
+          description: 'Client information updated'
+        });
       } else {
-        const { error } = await supabase
+        const { data: newClient, error } = await supabase
           .from('clients')
-          .insert([data]);
+          .insert([data])
+          .select()
+          .single();
         if (error) throw error;
+
+        // Record the creation activity
+        await supabase.from('client_activities').insert({
+          client_id: newClient.id,
+          activity_type: 'created',
+          description: 'Client profile created'
+        });
       }
     },
     onSuccess: () => {
@@ -101,7 +116,6 @@ const ClientForm = () => {
     return <div className="flex items-center justify-center p-8">Loading client details...</div>;
   }
 
-  // Group fields by category
   const personalFields = fields.filter(f => 
     ['name', 'email', 'phone', 'gender', 'qualification', 'website'].includes(f.field_id)
   );
@@ -110,7 +124,6 @@ const ClientForm = () => {
     ['street', 'suburb', 'city', 'postcode'].includes(f.field_id)
   );
 
-  // Get remaining fields that aren't in personal or address groups
   const otherFields = fields.filter(f => 
     !personalFields.map(p => p.field_id).includes(f.field_id) &&
     !addressFields.map(a => a.field_id).includes(f.field_id)
@@ -126,25 +139,28 @@ const ClientForm = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="personal" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+            <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
               <TabsTrigger value="personal" className="flex items-center gap-2">
                 <UserCircle className="h-4 w-4" />
                 Personal Info
               </TabsTrigger>
               {isEditing && (
-                <TabsTrigger value="documents" className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Documents
-                </TabsTrigger>
+                <>
+                  <TabsTrigger value="documents" className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Documents
+                  </TabsTrigger>
+                  <TabsTrigger value="history" className="flex items-center gap-2">
+                    <History className="h-4 w-4" />
+                    History
+                  </TabsTrigger>
+                </>
               )}
             </TabsList>
 
             <TabsContent value="personal">
               <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(onSubmit)}
-                  className="space-y-6"
-                >
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <div className="space-y-4">
                     <div className="grid gap-4 md:grid-cols-2">
                       {personalFields.map((field) => (
@@ -196,9 +212,14 @@ const ClientForm = () => {
             </TabsContent>
 
             {isEditing && (
-              <TabsContent value="documents">
-                <DocumentUpload clientId={id} />
-              </TabsContent>
+              <>
+                <TabsContent value="documents">
+                  <DocumentUpload clientId={id} />
+                </TabsContent>
+                <TabsContent value="history">
+                  <ClientHistory clientId={id} />
+                </TabsContent>
+              </>
             )}
           </Tabs>
         </CardContent>
