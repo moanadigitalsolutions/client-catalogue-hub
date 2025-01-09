@@ -2,14 +2,20 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Download, FileDown } from "lucide-react";
 import { toast } from "sonner";
-import { mockClients } from "@/utils/nzData";
 import * as XLSX from 'xlsx';
 import { supabase } from "@/lib/supabase";
 
 export const ExportSection = () => {
-  const handleExport = () => {
+  const handleExport = async () => {
     try {
-      const dataStr = JSON.stringify(mockClients, null, 2);
+      console.log("Starting data export...");
+      const { data: clients, error } = await supabase
+        .from('clients')
+        .select('*');
+
+      if (error) throw error;
+
+      const dataStr = JSON.stringify(clients, null, 2);
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
       const url = window.URL.createObjectURL(dataBlob);
       const link = document.createElement('a');
@@ -19,6 +25,8 @@ export const ExportSection = () => {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+      
+      console.log("Data exported successfully");
       toast.success("Data exported successfully");
     } catch (error) {
       console.error("Export error:", error);
@@ -28,6 +36,7 @@ export const ExportSection = () => {
 
   const handleTemplateDownload = async () => {
     try {
+      console.log("Generating Excel template...");
       const { data: clients, error } = await supabase
         .from('clients')
         .select('*')
@@ -58,6 +67,8 @@ export const ExportSection = () => {
 
       XLSX.utils.book_append_sheet(wb, ws, "Template");
       XLSX.writeFile(wb, 'client-template.xlsx');
+      
+      console.log("Template downloaded successfully");
       toast.success("Template downloaded successfully");
     } catch (error) {
       console.error("Template download error:", error);

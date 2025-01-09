@@ -4,11 +4,45 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Upload } from "lucide-react";
 import { toast } from "sonner";
-import { parseImportFile, processImportedData, importDataToSupabase } from "@/utils/dataImportExport";
+import { supabase } from "@/lib/supabase";
+import * as XLSX from 'xlsx';
 
 export const ImportSection = () => {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+
+  const parseImportFile = async (file: File) => {
+    console.log("Parsing import file:", file.name);
+    const fileExt = file.name.split('.').pop()?.toLowerCase();
+    
+    if (fileExt === 'xlsx' || fileExt === 'xls') {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      return XLSX.utils.sheet_to_json(firstSheet);
+    } else if (fileExt === 'json') {
+      const text = await file.text();
+      return JSON.parse(text);
+    } else {
+      throw new Error('Unsupported file format');
+    }
+  };
+
+  const processImportedData = (data: any[]) => {
+    return data.map((record: any) => {
+      // Remove the 'id' field if it's 'auto-generated' or exists
+      const { id, ...clientData } = record;
+      
+      // Convert any empty strings to null for optional fields
+      Object.keys(clientData).forEach(key => {
+        if (clientData[key] === '') {
+          clientData[key] = null;
+        }
+      });
+
+      return clientData;
+    });
+  };
 
   const handleImport = async () => {
     if (!importFile) {
@@ -18,11 +52,23 @@ export const ImportSection = () => {
 
     try {
       setIsImporting(true);
-      const data = await parseImportFile(importFile);
-      console.log("Importing data:", data);
+      console.log("Starting import process...");
+      
+      const rawData = await parseImportFile(importFile);
+      console.log("Parsed data:", rawData);
 
-      const processedData = processImportedData(data);
-      const insertedData = await importDataToSupabase(processedData);
+      const processedData = processImportedData(rawData);
+      console.log("Processed data for import:", processedData);
+
+      const { data: insertedData, error } = await supabase
+        .from('clients')
+        .insert(processedData)
+        .select();
+
+      if (error) {
+        console.error("Import error:", error);
+        throw error;
+      }
 
       console.log("Successfully imported data:", insertedData);
       toast.success(`Successfully imported ${insertedData.length} records`);
