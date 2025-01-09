@@ -20,7 +20,7 @@ export const TextFormField = ({ field, form }: TextFormFieldProps) => {
   const inputType = (() => {
     switch (field.type) {
       case "url":
-        return "url";
+        return "text"; // Changed from "url" to "text" to allow more flexible input
       case "email":
         return "email";
       case "phone":
@@ -30,10 +30,27 @@ export const TextFormField = ({ field, form }: TextFormFieldProps) => {
     }
   })();
 
+  const handleUrlValidation = (value: string) => {
+    if (field.type !== "url" || !value) return true;
+    
+    // Add http:// if no protocol is specified
+    const urlToTest = value.match(/^https?:\/\//) ? value : `http://${value}`;
+    
+    try {
+      new URL(urlToTest);
+      return true;
+    } catch {
+      return "Please enter a valid website address";
+    }
+  };
+
   return (
     <FormField
       control={form.control}
       name={field.field_id}
+      rules={{
+        validate: handleUrlValidation
+      }}
       render={({ field: formField }) => (
         <FormItem>
           <FormLabel>{field.label}</FormLabel>
@@ -42,6 +59,15 @@ export const TextFormField = ({ field, form }: TextFormFieldProps) => {
               {...formField}
               type={inputType}
               placeholder={`Enter ${field.label.toLowerCase()}`}
+              onChange={(e) => {
+                let value = e.target.value;
+                if (field.type === "url" && value && !value.match(/^https?:\/\//)) {
+                  // Only add http:// when saving/submitting, not during typing
+                  formField.onChange(value);
+                } else {
+                  formField.onChange(value);
+                }
+              }}
             />
           </FormControl>
           <FormMessage />
