@@ -87,6 +87,8 @@ export const UserList = () => {
         return;
       }
 
+      console.log('Calling delete-user function for userId:', userId);
+      
       // Call the Edge Function to delete the auth user
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user`, {
         method: 'POST',
@@ -97,13 +99,15 @@ export const UserList = () => {
         body: JSON.stringify({ userId }),
       });
 
+      const responseData = await response.json();
+
       if (!response.ok) {
-        const error = await response.json();
-        console.error('Error deleting auth user:', error);
+        console.error('Error response from delete-user function:', responseData);
         toast.error('Failed to delete user');
         return;
       }
 
+      console.log('Delete user response:', responseData);
       toast.success('User deleted successfully');
       refetch();
     } catch (error) {
