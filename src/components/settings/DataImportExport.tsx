@@ -12,6 +12,7 @@ import { mockClients } from "@/utils/nzData";
 
 export const DataImportExport = () => {
   const [importFile, setImportFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   const handleExport = () => {
     try {
@@ -40,6 +41,7 @@ export const DataImportExport = () => {
     }
 
     try {
+      setIsImporting(true);
       const fileExt = importFile.name.split('.').pop()?.toLowerCase();
       let data;
 
@@ -55,12 +57,41 @@ export const DataImportExport = () => {
         throw new Error('Unsupported file format');
       }
 
-      console.log("Imported data:", data);
-      toast.success("Data imported successfully");
+      console.log("Importing data:", data);
+
+      // Process and insert each record
+      const processedData = data.map((record: any) => {
+        // Remove the 'id' field if it's 'auto-generated' or exists
+        const { id, ...clientData } = record;
+        
+        // Convert any empty strings to null for optional fields
+        Object.keys(clientData).forEach(key => {
+          if (clientData[key] === '') {
+            clientData[key] = null;
+          }
+        });
+
+        return clientData;
+      });
+
+      const { data: insertedData, error } = await supabase
+        .from('clients')
+        .insert(processedData)
+        .select();
+
+      if (error) {
+        console.error("Import error:", error);
+        throw error;
+      }
+
+      console.log("Successfully imported data:", insertedData);
+      toast.success(`Successfully imported ${insertedData.length} records`);
       setImportFile(null);
     } catch (error) {
       console.error("Import error:", error);
       toast.error("Failed to import data. Please ensure the file is in the correct format");
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -141,11 +172,11 @@ export const DataImportExport = () => {
               />
               <Button
                 onClick={handleImport}
-                disabled={!importFile}
+                disabled={!importFile || isImporting}
                 variant="secondary"
               >
                 <Upload className="mr-2 h-4 w-4" />
-                Import
+                {isImporting ? 'Importing...' : 'Import'}
               </Button>
             </div>
           </div>
