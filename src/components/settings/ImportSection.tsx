@@ -34,11 +34,17 @@ export const ImportSection = () => {
       const { id, ...clientData } = record;
       
       // Convert any empty strings to null for optional fields
+      // but exclude created_at as it's required
       Object.keys(clientData).forEach(key => {
-        if (clientData[key] === '') {
+        if (key !== 'created_at' && clientData[key] === '') {
           clientData[key] = null;
         }
       });
+
+      // Ensure created_at is set to current timestamp if not provided
+      if (!clientData.created_at) {
+        clientData.created_at = new Date().toISOString();
+      }
 
       return clientData;
     });
