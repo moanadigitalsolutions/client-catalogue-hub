@@ -44,7 +44,7 @@ export const UserList = () => {
       const transformedData = profiles.map(profile => ({
         id: profile.id,
         name: profile.name || 'Unnamed User',
-        email: profile.email || 'No email',
+        email: profile.email || '',  // Changed to empty string as default
         role: userRoles.find(role => role.user_id === profile.id)?.role || 'employee'
       }));
 
@@ -153,7 +153,7 @@ export const UserList = () => {
                     )}
                     {user.name}
                   </TableCell>
-                  <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.email || 'No email'}</TableCell>
                   <TableCell>
                     <UserRoleSelect 
                       userId={user.id} 
