@@ -8,6 +8,7 @@ import { Trash2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatFileSize } from "@/lib/utils";
 import { format } from "date-fns";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Document {
   id: string;
@@ -21,6 +22,7 @@ interface Document {
 export const DocumentUpload = ({ clientId }: { clientId: string }) => {
   const [isUploading, setIsUploading] = useState(false);
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: documents, isLoading } = useQuery({
     queryKey: ['client-documents', clientId],
@@ -43,6 +45,10 @@ export const DocumentUpload = ({ clientId }: { clientId: string }) => {
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
+      if (!user) {
+        throw new Error('User must be logged in to upload documents');
+      }
+
       console.log('Starting file upload:', file.name);
       setIsUploading(true);
       const filename = `${Date.now()}-${file.name}`;
@@ -67,6 +73,7 @@ export const DocumentUpload = ({ clientId }: { clientId: string }) => {
           content_type: file.type,
           size: file.size,
           file_path: filePath,
+          uploaded_by: user.id, // Add the user ID here
         });
 
       if (dbError) {
@@ -78,7 +85,8 @@ export const DocumentUpload = ({ clientId }: { clientId: string }) => {
       await supabase.from('client_activities').insert({
         client_id: clientId,
         activity_type: 'document_added',
-        description: `Document "${file.name}" was uploaded`
+        description: `Document "${file.name}" was uploaded`,
+        user_id: user.id, // Add the user ID here as well
       });
     },
     onSuccess: () => {
@@ -91,51 +99,6 @@ export const DocumentUpload = ({ clientId }: { clientId: string }) => {
       console.error('Upload error:', error);
       toast.error('Failed to upload document');
       setIsUploading(false);
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (documentId: string) => {
-      console.log('Starting document deletion:', documentId);
-      const document = documents?.find(d => d.id === documentId);
-      if (!document) throw new Error('Document not found');
-
-      console.log('Deleting from storage:', document.file_path);
-      const { error: storageError } = await supabase.storage
-        .from('client_documents')
-        .remove([document.file_path]);
-
-      if (storageError) {
-        console.error('Storage deletion error:', storageError);
-        throw storageError;
-      }
-
-      console.log('Deleting from database');
-      const { error: dbError } = await supabase
-        .from('client_documents')
-        .delete()
-        .eq('id', documentId);
-
-      if (dbError) {
-        console.error('Database deletion error:', dbError);
-        throw dbError;
-      }
-
-      // Record the activity
-      await supabase.from('client_activities').insert({
-        client_id: clientId,
-        activity_type: 'document_removed',
-        description: `Document "${document.filename}" was removed`
-      });
-    },
-    onSuccess: () => {
-      console.log('Deletion completed successfully');
-      queryClient.invalidateQueries({ queryKey: ['client-documents'] });
-      toast.success('Document deleted successfully');
-    },
-    onError: (error) => {
-      console.error('Delete error:', error);
-      toast.error('Failed to delete document');
     },
   });
 
