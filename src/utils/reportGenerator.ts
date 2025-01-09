@@ -19,7 +19,12 @@ interface ReportParams {
   searchTerm?: string;
 }
 
-const generateExcel = (data: any[], fields: string[]) => {
+interface ClientData {
+  [key: string]: string | number | boolean | null;
+  dob?: string;
+}
+
+const generateExcel = (data: ClientData[], fields: string[]) => {
   const worksheet = XLSX.utils.json_to_sheet(data);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Report");
@@ -32,7 +37,7 @@ const generateExcel = (data: any[], fields: string[]) => {
   return { blob, filename: `report-${new Date().toISOString()}.xlsx` };
 };
 
-const generatePDF = (data: any[], fields: string[]) => {
+const generatePDF = (data: ClientData[], fields: string[]) => {
   const doc = new jsPDF();
 
   // Add title
@@ -93,15 +98,17 @@ export const generateReport = async (format: "pdf" | "excel", params: ReportPara
     throw new Error(`Error fetching report data: ${error.message}`);
   }
 
-  if (!data) {
+  if (!data || !Array.isArray(data)) {
     throw new Error('No data returned from query');
   }
 
   // Map dob back to birth_date in the results
-  const mappedData = data.map(row => {
+  const mappedData = data.map((row: ClientData) => {
+    if (!row) return {};
+    
     const newRow = { ...row };
-    if (params.fields.includes('birth_date') && row.dob) {
-      newRow.birth_date = row.dob;
+    if (params.fields.includes('birth_date') && newRow.dob) {
+      newRow.birth_date = newRow.dob;
       delete newRow.dob;
     }
     return newRow;
