@@ -12,10 +12,6 @@ const Reports = () => {
   const { toast } = useToast();
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-  const [groupBy, setGroupBy] = useState<string>("");
-  const [sortBy, setSortBy] = useState<string>("");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [searchTerm, setSearchTerm] = useState("");
   const [selectedFormat, setSelectedFormat] = useState<"pdf" | "excel">("pdf");
   const [isExporting, setIsExporting] = useState(false);
 
@@ -50,10 +46,6 @@ const Reports = () => {
           from: dateRange.from!,
           to: dateRange.to!
         } : undefined,
-        groupBy,
-        sortBy,
-        sortOrder,
-        searchTerm,
       });
 
       const url = window.URL.createObjectURL(result.blob);
@@ -94,14 +86,6 @@ const Reports = () => {
         <ReportFilters
           dateRange={dateRange}
           setDateRange={setDateRange}
-          groupBy={groupBy}
-          setGroupBy={setGroupBy}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          sortOrder={sortOrder}
-          setSortOrder={setSortOrder}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
         />
       </ReportHeader>
 
