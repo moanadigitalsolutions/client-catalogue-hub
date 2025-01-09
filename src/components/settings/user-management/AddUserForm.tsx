@@ -32,6 +32,8 @@ export const AddUserForm = ({ loading, onUserAdded }: AddUserFormProps) => {
         return;
       }
 
+      console.log("Creating new user with email:", newUser.email);
+
       // Generate a temporary password
       const tempPassword = Math.random().toString(36).slice(-8);
 
