@@ -2,7 +2,6 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { supabase } from "@/lib/supabase";
-import { SupabaseClient } from '@supabase/supabase-js';
 
 // Extend jsPDF type to include autoTable
 declare module 'jspdf' {
@@ -104,7 +103,7 @@ export const generateReport = async (format: "pdf" | "excel", params: ReportPara
   }
 
   // Map dob back to birth_date in the results if needed
-  const mappedData = (data as ClientData[]).map((row: ClientData) => {
+  const mappedData = (data as unknown as ClientData[]).map((row: ClientData) => {
     if (!row) return {};
     
     const newRow = { ...row };
