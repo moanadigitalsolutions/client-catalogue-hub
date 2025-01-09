@@ -1,18 +1,9 @@
-"use client";
-
 import * as React from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { DateRange } from "react-day-picker";
-
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Input } from "./input";
+import { Label } from "./label";
+import { DateRange } from "react-day-picker";
 
 interface DatePickerWithRangeProps {
   className?: string;
@@ -25,51 +16,44 @@ export function DatePickerWithRange({
   date,
   setDate,
 }: DatePickerWithRangeProps) {
-  const [open, setOpen] = React.useState(false);
+  const handleFromDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fromDate = new Date(e.target.value);
+    setDate({
+      from: fromDate,
+      to: date?.to,
+    });
+  };
+
+  const handleToDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const toDate = new Date(e.target.value);
+    setDate({
+      from: date?.from,
+      to: toDate,
+    });
+  };
 
   return (
-    <div className={cn("grid gap-2", className)}>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            id="date"
-            variant={"outline"}
-            className={cn(
-              "w-full justify-start text-left font-normal",
-              !date && "text-muted-foreground"
-            )}
-          >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {date?.from ? (
-              date.to ? (
-                <>
-                  {format(date.from, "LLL dd, y")} -{" "}
-                  {format(date.to, "LLL dd, y")}
-                </>
-              ) : (
-                format(date.from, "LLL dd, y")
-              )
-            ) : (
-              <span>Pick a date range</span>
-            )}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            initialFocus
-            mode="range"
-            defaultMonth={date?.from}
-            selected={date}
-            onSelect={(selectedDate) => {
-              setDate(selectedDate);
-              if (selectedDate?.from && selectedDate?.to) {
-                setOpen(false);
-              }
-            }}
-            numberOfMonths={2}
-          />
-        </PopoverContent>
-      </Popover>
+    <div className={cn("grid gap-4", className)}>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="from-date">From</Label>
+        <Input
+          type="date"
+          id="from-date"
+          value={date?.from ? format(date.from, 'yyyy-MM-dd') : ''}
+          onChange={handleFromDateChange}
+          className="w-full"
+        />
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="to-date">To</Label>
+        <Input
+          type="date"
+          id="to-date"
+          value={date?.to ? format(date.to, 'yyyy-MM-dd') : ''}
+          onChange={handleToDateChange}
+          className="w-full"
+        />
+      </div>
     </div>
   );
 }
