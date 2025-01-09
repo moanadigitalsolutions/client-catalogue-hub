@@ -19,23 +19,55 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Initialize auth state from localStorage
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
+    // Initialize auth state
+    const initializeAuth = async () => {
       try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-        // If we have a user and we're on the login page, redirect to dashboard
-        if (location.pathname === '/login') {
-          navigate('/dashboard');
+        // Get the current session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Error getting session:', sessionError);
+          throw sessionError;
+        }
+
+        if (session?.user) {
+          setUser(session.user);
+          if (location.pathname === '/login') {
+            navigate('/dashboard');
+          }
         }
       } catch (error) {
-        console.error('Error parsing stored user:', error);
-        localStorage.removeItem('user');
+        console.error('Auth initialization error:', error);
+        // Clear any potentially invalid stored session
+        localStorage.removeItem('sb-ffamaeearrzchaxuamcl-auth-token');
+      } finally {
+        setLoading(false);
       }
-    }
-    setLoading(false);
+    };
+
+    initializeAuth();
+
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.id);
+      
+      if (event === 'SIGNED_IN') {
+        setUser(session?.user ?? null);
+        navigate('/dashboard');
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        navigate('/login');
+      } else if (event === 'TOKEN_REFRESHED') {
+        setUser(session?.user ?? null);
+      } else if (event === 'USER_UPDATED') {
+        setUser(session?.user ?? null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate, location.pathname]);
 
   const signIn = async (email: string, password: string) => {
@@ -63,7 +95,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           } as User;
           
           setUser(mockUser);
-          localStorage.setItem('user', JSON.stringify(mockUser));
           toast.success("Logged in successfully as temp admin");
           
           const from = location.state?.from?.pathname || '/dashboard';
@@ -77,13 +108,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (data.user) {
         console.log("AuthContext: Supabase login successful");
         setUser(data.user);
-        localStorage.setItem('user', JSON.stringify(data.user));
         toast.success("Logged in successfully");
         
         const from = location.state?.from?.pathname || '/dashboard';
         console.log("AuthContext: Redirecting to:", from);
         navigate(from, { replace: true });
-        return;
       }
       
     } catch (error) {
@@ -97,8 +126,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     try {
       setLoading(true);
-      await supabase.auth.signOut();
-      localStorage.removeItem('user');
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      // Clear any stored session data
+      localStorage.removeItem('sb-ffamaeearrzchaxuamcl-auth-token');
       setUser(null);
       navigate('/login');
       toast.success("Logged out successfully");
