@@ -42,7 +42,8 @@ const ClientsByCityChart = ({ data, className }: ClientsByCityChartProps) => {
               contentStyle={{ 
                 background: 'white',
                 border: '1px solid #e5e7eb',
-                borderRadius: '6px',
+                borderRadius: '8px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                 fontSize: '12px'
               }}
             />

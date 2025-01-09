@@ -34,7 +34,7 @@ const UserActivities = () => {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="shadow-md">
         <CardHeader>
           <CardTitle>Recent Activities</CardTitle>
         </CardHeader>
@@ -50,16 +50,19 @@ const UserActivities = () => {
   }
 
   return (
-    <Card>
+    <Card className="shadow-md">
       <CardHeader>
         <CardTitle>Recent Activities</CardTitle>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[200px]">
+        <ScrollArea className="h-[300px] pr-4">
           {activities?.map((activity) => (
-            <div key={activity.id} className="flex items-center justify-between py-2 border-b last:border-0">
+            <div 
+              key={activity.id} 
+              className="flex items-center justify-between py-3 border-b last:border-0 hover:bg-accent/5 rounded-lg px-2 transition-colors"
+            >
               <div className="flex flex-col">
-                <span className="text-sm font-medium">
+                <span className="text-sm font-medium text-primary">
                   {activity.profiles?.name || 'Unknown User'}
                 </span>
                 <span className="text-sm text-muted-foreground">
