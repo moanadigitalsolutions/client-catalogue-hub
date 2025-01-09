@@ -41,12 +41,13 @@ const generatePDF = (data: any[], fields: string[]) => {
   doc.setFontSize(10);
   doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 25);
 
-  // Prepare table data
-  const tableData = data.map(row => fields.map(field => row[field]));
+  // Map birth_date to dob for display
+  const displayFields = fields.map(field => field === 'birth_date' ? 'dob' : field);
+  const tableData = data.map(row => displayFields.map(field => row[field]));
   
   // Generate table
   doc.autoTable({
-    head: [fields],
+    head: [fields], // Keep original field names for headers
     body: tableData,
     startY: 35,
     margin: { top: 30 },
@@ -60,10 +61,13 @@ const generatePDF = (data: any[], fields: string[]) => {
 export const generateReport = async (format: "pdf" | "excel", params: ReportParams) => {
   console.log("Generating report with params:", params);
   
+  // Map birth_date to dob for database query
+  const queryFields = params.fields.map(field => field === 'birth_date' ? 'dob' : field);
+  
   // Fetch data from Supabase based on selected fields
   let query = supabase
     .from('clients')
-    .select(params.fields.join(','));
+    .select(queryFields.join(','));
 
   // Apply date range filter if provided
   if (params.dateRange?.from && params.dateRange?.to) {
@@ -78,12 +82,14 @@ export const generateReport = async (format: "pdf" | "excel", params: ReportPara
 
   // Apply sorting
   if (params.sortBy) {
-    query = query.order(params.sortBy, { ascending: params.sortOrder === 'asc' });
+    const sortField = params.sortBy === 'birth_date' ? 'dob' : params.sortBy;
+    query = query.order(sortField, { ascending: params.sortOrder === 'asc' });
   }
 
   const { data, error } = await query;
 
   if (error) {
+    console.error('Error fetching report data:', error);
     throw new Error(`Error fetching report data: ${error.message}`);
   }
 
@@ -91,9 +97,19 @@ export const generateReport = async (format: "pdf" | "excel", params: ReportPara
     throw new Error('No data returned from query');
   }
 
+  // Map dob back to birth_date in the results
+  const mappedData = data.map(row => {
+    const newRow = { ...row };
+    if (params.fields.includes('birth_date') && row.dob) {
+      newRow.birth_date = row.dob;
+      delete newRow.dob;
+    }
+    return newRow;
+  });
+
   if (format === "excel") {
-    return generateExcel(data, params.fields);
+    return generateExcel(mappedData, params.fields);
   } else {
-    return generatePDF(data, params.fields);
+    return generatePDF(mappedData, params.fields);
   }
 };
