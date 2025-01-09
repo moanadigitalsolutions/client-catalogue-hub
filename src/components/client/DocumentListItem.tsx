@@ -19,18 +19,18 @@ interface DocumentListItemProps {
   onDelete: (id: string) => void;
 }
 
-export const DocumentListItem = ({ document, formatFileSize, onDelete }: DocumentListItemProps) => {
+export const DocumentListItem = ({ document: doc, formatFileSize, onDelete }: DocumentListItemProps) => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const isImage = document.content_type.startsWith('image/');
+  const isImage = doc.content_type.startsWith('image/');
 
   const handlePreview = async () => {
     try {
-      console.log('Fetching document for preview:', document.file_path);
+      console.log('Fetching document for preview:', doc.file_path);
       const { data, error } = await supabase.storage
         .from('client_documents')
-        .createSignedUrl(document.file_path, 3600); // URL valid for 1 hour
+        .createSignedUrl(doc.file_path, 3600); // URL valid for 1 hour
 
       if (error) {
         console.error('Preview error:', error);
@@ -52,10 +52,10 @@ export const DocumentListItem = ({ document, formatFileSize, onDelete }: Documen
 
   const handleDownload = async () => {
     try {
-      console.log('Downloading document:', document.file_path);
+      console.log('Downloading document:', doc.file_path);
       const { data, error } = await supabase.storage
         .from('client_documents')
-        .download(document.file_path);
+        .download(doc.file_path);
 
       if (error) {
         console.error('Download error:', error);
@@ -64,12 +64,12 @@ export const DocumentListItem = ({ document, formatFileSize, onDelete }: Documen
 
       // Create a download link
       const url = window.URL.createObjectURL(data);
-      const link = document.createElement('a');
+      const link = window.document.createElement('a');
       link.href = url;
-      link.download = document.filename;
-      document.body.appendChild(link);
+      link.download = doc.filename;
+      window.document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      window.document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       
       console.log('Download completed successfully');
@@ -92,19 +92,19 @@ export const DocumentListItem = ({ document, formatFileSize, onDelete }: Documen
             ) : (
               <FileText className="h-4 w-4" />
             )}
-            {document.filename}
+            {doc.filename}
           </button>
           <div className="flex gap-2 text-sm text-muted-foreground">
-            <span>{formatFileSize(document.size)}</span>
+            <span>{formatFileSize(doc.size)}</span>
             <span>•</span>
-            <span>{format(new Date(document.created_at), 'MMM d, yyyy')}</span>
+            <span>{format(new Date(doc.created_at), 'MMM d, yyyy')}</span>
           </div>
         </div>
         <div className="flex items-center gap-2 ml-4">
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onDelete(document.id)}
+            onClick={() => onDelete(doc.id)}
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -116,7 +116,7 @@ export const DocumentListItem = ({ document, formatFileSize, onDelete }: Documen
           {previewUrl && isImage && (
             <img 
               src={previewUrl} 
-              alt={document.filename}
+              alt={doc.filename}
               className="w-full h-auto rounded-lg"
             />
           )}
