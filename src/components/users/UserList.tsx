@@ -89,25 +89,18 @@ export const UserList = () => {
 
       console.log('Calling delete-user function for userId:', userId);
       
-      // Call the Edge Function to delete the auth user
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({ userId }),
+      // Call the Edge Function to delete the auth user using the supabase client
+      const { data: functionData, error: functionError } = await supabase.functions.invoke('delete-user', {
+        body: { userId }
       });
 
-      const responseData = await response.json();
-
-      if (!response.ok) {
-        console.error('Error response from delete-user function:', responseData);
+      if (functionError) {
+        console.error('Error response from delete-user function:', functionError);
         toast.error('Failed to delete user');
         return;
       }
 
-      console.log('Delete user response:', responseData);
+      console.log('Delete user response:', functionData);
       toast.success('User deleted successfully');
       refetch();
     } catch (error) {
