@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { supabase } from "@/lib/supabase";
+import { PostgrestResponse } from '@supabase/supabase-js';
 
 // Extend jsPDF type to include autoTable
 declare module 'jspdf' {
@@ -72,7 +73,7 @@ export const generateReport = async (format: "pdf" | "excel", params: ReportPara
   // Fetch data from Supabase based on selected fields
   let query = supabase
     .from('clients')
-    .select(queryFields.join(','));
+    .select<'clients', ClientData>(queryFields.join(','));
 
   // Apply date range filter if provided
   if (params.dateRange?.from && params.dateRange?.to) {
