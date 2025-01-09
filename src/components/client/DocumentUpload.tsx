@@ -48,13 +48,19 @@ export const DocumentUpload = ({ clientId }: { clientId: string }) => {
 
       console.log('Starting file upload:', file.name);
       setIsUploading(true);
-      const filename = `${Date.now()}-${file.name}`;
-      const filePath = `clients/${clientId}/${filename}`;
+
+      // Sanitize filename to remove non-ASCII characters
+      const sanitizedFileName = file.name.replace(/[^\x00-\x7F]/g, '');
+      const timestamp = Date.now();
+      const filePath = `clients/${clientId}/${timestamp}-${sanitizedFileName}`;
 
       console.log('Uploading to storage with path:', filePath);
       const { error: uploadError } = await supabase.storage
         .from('client_documents')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) {
         console.error('Storage upload error:', uploadError);
@@ -66,7 +72,7 @@ export const DocumentUpload = ({ clientId }: { clientId: string }) => {
         .from('client_documents')
         .insert({
           client_id: clientId,
-          filename: file.name,
+          filename: sanitizedFileName,
           content_type: file.type,
           size: file.size,
           file_path: filePath,
@@ -75,6 +81,10 @@ export const DocumentUpload = ({ clientId }: { clientId: string }) => {
 
       if (dbError) {
         console.error('Database insert error:', dbError);
+        // If database insert fails, try to clean up the uploaded file
+        await supabase.storage
+          .from('client_documents')
+          .remove([filePath]);
         throw dbError;
       }
 
@@ -82,7 +92,7 @@ export const DocumentUpload = ({ clientId }: { clientId: string }) => {
       await supabase.from('client_activities').insert({
         client_id: clientId,
         activity_type: 'document_added',
-        description: `Document "${file.name}" was uploaded`,
+        description: `Document "${sanitizedFileName}" was uploaded`,
         user_id: user.id,
       });
     },
