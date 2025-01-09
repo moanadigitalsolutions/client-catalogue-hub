@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { ReportFields } from "@/components/reports/ReportFields";
 import { ReportFilters } from "@/components/reports/ReportFilters";
 import { ExportOptions } from "@/components/reports/ExportOptions";
+import { generateReport } from "@/utils/reportGenerator";
 
 const Reports = () => {
   const { fields } = useFormFields();
@@ -28,6 +29,7 @@ const Reports = () => {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFormat, setSelectedFormat] = useState<"pdf" | "excel">("pdf");
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleFieldToggle = (fieldId: string) => {
     setSelectedFields((prev) =>
@@ -51,20 +53,61 @@ const Reports = () => {
       return;
     }
 
-    console.log("Exporting report with parameters:", {
-      format,
-      fields: selectedFields,
-      dateRange,
-      groupBy,
-      sortBy,
-      sortOrder,
-      searchTerm,
-    });
+    try {
+      setIsExporting(true);
+      
+      // Map selected field IDs to actual field names from the database
+      const selectedFieldNames = selectedFields.map(fieldId => {
+        const field = fields.find(f => f.id === fieldId);
+        return field?.field_id || '';
+      }).filter(Boolean);
 
-    toast({
-      title: "Report Generated",
-      description: `Your ${format.toUpperCase()} report has been generated successfully`,
-    });
+      console.log("Exporting report with parameters:", {
+        format,
+        fields: selectedFieldNames,
+        dateRange,
+        groupBy,
+        sortBy,
+        sortOrder,
+        searchTerm,
+      });
+
+      const result = await generateReport(format, {
+        fields: selectedFieldNames,
+        dateRange: dateRange ? {
+          from: dateRange.from!,
+          to: dateRange.to!
+        } : undefined,
+        groupBy,
+        sortBy,
+        sortOrder,
+        searchTerm,
+      });
+
+      // Create download link
+      const url = window.URL.createObjectURL(result.blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = result.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Report Generated",
+        description: `Your ${format.toUpperCase()} report has been generated successfully`,
+      });
+    } catch (error) {
+      console.error("Error generating report:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate report. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleSaveReportTemplate = () => {
@@ -129,7 +172,7 @@ const Reports = () => {
             setSelectedFormat={setSelectedFormat}
             onExport={handleExport}
             onSaveTemplate={handleSaveReportTemplate}
-            disabled={selectedFields.length === 0}
+            disabled={selectedFields.length === 0 || isExporting}
           />
 
           <Separator />
