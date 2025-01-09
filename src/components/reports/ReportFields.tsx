@@ -27,12 +27,12 @@ export const ReportFields = ({
         {fields.map((field: FormField) => (
           <div key={field.id} className="flex items-center space-x-2">
             <Checkbox
-              id={field.id}
-              checked={selectedFields.includes(field.id)}
-              onCheckedChange={() => onFieldToggle(field.id)}
+              id={field.field_id}
+              checked={selectedFields.includes(field.field_id)}
+              onCheckedChange={() => onFieldToggle(field.field_id)}
             />
             <label
-              htmlFor={field.id}
+              htmlFor={field.field_id}
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
               {field.label}

@@ -1,24 +1,11 @@
 import { useState } from "react";
 import { useFormFields } from "@/hooks/useFormFields";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Filter } from "lucide-react";
 import { DateRange } from "react-day-picker";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { Separator } from "@/components/ui/separator";
-import { ReportFields } from "@/components/reports/ReportFields";
-import { ReportFilters } from "@/components/reports/ReportFilters";
-import { ExportOptions } from "@/components/reports/ExportOptions";
 import { generateReport } from "@/utils/reportGenerator";
-import { DataPreview } from "@/components/reports/DataPreview";
+import { ReportHeader } from "@/components/reports/ReportHeader";
+import { ReportContent } from "@/components/reports/ReportContent";
+import { ReportFilters } from "@/components/reports/ReportFilters";
 
 const Reports = () => {
   const { fields } = useFormFields();
@@ -41,7 +28,8 @@ const Reports = () => {
   };
 
   const handleSelectAll = () => {
-    setSelectedFields(fields.map((f) => f.field_id));
+    const allFieldIds = fields.map((f) => f.field_id);
+    setSelectedFields(allFieldIds);
   };
 
   const handleExport = async (format: "pdf" | "excel") => {
@@ -102,75 +90,33 @@ const Reports = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Reports</h1>
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="outline">
-              <Filter className="mr-2 h-4 w-4" />
-              Filters
-            </Button>
-          </SheetTrigger>
-          <SheetContent>
-            <SheetHeader>
-              <SheetTitle>Report Filters</SheetTitle>
-              <SheetDescription>
-                Configure your report filters and parameters
-              </SheetDescription>
-            </SheetHeader>
-            <ReportFilters
-              dateRange={dateRange}
-              setDateRange={setDateRange}
-              groupBy={groupBy}
-              setGroupBy={setGroupBy}
-              sortBy={sortBy}
-              setSortBy={setSortBy}
-              sortOrder={sortOrder}
-              setSortOrder={setSortOrder}
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-            />
-          </SheetContent>
-        </Sheet>
-      </div>
+      <ReportHeader>
+        <ReportFilters
+          dateRange={dateRange}
+          setDateRange={setDateRange}
+          groupBy={groupBy}
+          setGroupBy={setGroupBy}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          sortOrder={sortOrder}
+          setSortOrder={setSortOrder}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+        />
+      </ReportHeader>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Generate Report</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <ReportFields
-            fields={fields}
-            selectedFields={selectedFields}
-            onFieldToggle={handleFieldToggle}
-            onSelectAll={handleSelectAll}
-          />
-
-          <Separator />
-
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Data Preview</h3>
-            <DataPreview 
-              selectedFields={selectedFields.map(id => {
-                const field = fields.find(f => f.id === id);
-                return field?.field_id || '';
-              })}
-              fields={fields}
-              dateRange={dateRange}
-            />
-          </div>
-
-          <Separator />
-
-          <ExportOptions
-            selectedFormat={selectedFormat}
-            setSelectedFormat={setSelectedFormat}
-            onExport={handleExport}
-            onSaveTemplate={handleSaveReportTemplate}
-            disabled={selectedFields.length === 0 || isExporting}
-          />
-        </CardContent>
-      </Card>
+      <ReportContent
+        fields={fields}
+        selectedFields={selectedFields}
+        onFieldToggle={handleFieldToggle}
+        onSelectAll={handleSelectAll}
+        dateRange={dateRange}
+        selectedFormat={selectedFormat}
+        setSelectedFormat={setSelectedFormat}
+        onExport={handleExport}
+        onSaveTemplate={handleSaveReportTemplate}
+        isExporting={isExporting}
+      />
     </div>
   );
 };
