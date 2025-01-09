@@ -1,9 +1,13 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FormField } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { DateRange } from "react-day-picker";
+import { TableHeader } from "./table/TableHeader";
+import { TableContent } from "./table/TableContent";
+import { LoadingState } from "./table/LoadingState";
+import { NoDataState } from "./table/NoDataState";
 
 interface DataPreviewProps {
   selectedFields: string[];
@@ -11,7 +15,6 @@ interface DataPreviewProps {
   dateRange?: DateRange;
 }
 
-// Define the shape of our data row
 interface ClientRow {
   [key: string]: string | number | boolean | null;
   dob?: string;
@@ -24,7 +27,6 @@ export const DataPreview = ({ selectedFields, fields, dateRange }: DataPreviewPr
       console.log("Fetching preview data with fields:", selectedFields);
       if (selectedFields.length === 0) return [];
 
-      // Map birth_date to dob for the database query
       const mappedFields = selectedFields.map(field => field === 'birth_date' ? 'dob' : field);
       console.log("Mapped fields for query:", mappedFields);
 
@@ -48,7 +50,6 @@ export const DataPreview = ({ selectedFields, fields, dateRange }: DataPreviewPr
 
       if (!data) return [];
 
-      // Map dob back to birth_date in the results if needed
       return (data as unknown as ClientRow[]).map(row => {
         if (!row) return {};
         
@@ -71,46 +72,17 @@ export const DataPreview = ({ selectedFields, fields, dateRange }: DataPreviewPr
     );
   }
 
-  const getFieldLabel = (fieldId: string) => {
-    const field = fields.find(f => f.field_id === fieldId);
-    return field?.label || fieldId;
-  };
-
   return (
     <ScrollArea className="h-[400px] border rounded-md">
       <Table>
-        <TableHeader>
-          <TableRow>
-            {selectedFields.map((fieldId) => (
-              <TableHead key={fieldId}>{getFieldLabel(fieldId)}</TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isLoading ? (
-            <TableRow>
-              <TableCell colSpan={selectedFields.length} className="text-center">
-                Loading preview data...
-              </TableCell>
-            </TableRow>
-          ) : previewData && previewData.length > 0 ? (
-            previewData.map((row, index) => (
-              <TableRow key={index}>
-                {selectedFields.map((fieldId) => (
-                  <TableCell key={fieldId}>
-                    {row[fieldId] !== null ? String(row[fieldId]) : ''}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={selectedFields.length} className="text-center">
-                No data available
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
+        <TableHeader selectedFields={selectedFields} fields={fields} />
+        {isLoading ? (
+          <LoadingState colSpan={selectedFields.length} />
+        ) : previewData && previewData.length > 0 ? (
+          <TableContent data={previewData} selectedFields={selectedFields} />
+        ) : (
+          <NoDataState colSpan={selectedFields.length} />
+        )}
       </Table>
     </ScrollArea>
   );
