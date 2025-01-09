@@ -1,13 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { DocumentList } from "./DocumentList";
 import { formatFileSize } from "@/lib/utils";
-import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface Document {
@@ -159,12 +156,6 @@ export const DocumentUpload = ({ clientId }: { clientId: string }) => {
     }
   };
 
-  const handleDelete = (documentId: string) => {
-    if (window.confirm('Are you sure you want to delete this document?')) {
-      deleteMutation.mutate(documentId);
-    }
-  };
-
   if (isLoading) {
     return <div>Loading documents...</div>;
   }
@@ -183,39 +174,15 @@ export const DocumentUpload = ({ clientId }: { clientId: string }) => {
         </p>
       </div>
 
-      <ScrollArea className="h-[300px]">
-        <div className="space-y-2">
-          {documents?.map((doc) => (
-            <div
-              key={doc.id}
-              className="flex items-center justify-between p-2 border rounded-lg"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{doc.filename}</p>
-                <div className="flex gap-2 text-sm text-muted-foreground">
-                  <span>{formatFileSize(doc.size)}</span>
-                  <span>•</span>
-                  <span>{format(new Date(doc.created_at), 'MMM d, yyyy')}</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 ml-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDelete(doc.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          ))}
-          {(!documents || documents.length === 0) && (
-            <p className="text-center text-sm text-muted-foreground py-4">
-              No documents uploaded yet
-            </p>
-          )}
-        </div>
-      </ScrollArea>
+      <DocumentList
+        documents={documents}
+        formatFileSize={formatFileSize}
+        onDelete={(id) => {
+          if (window.confirm('Are you sure you want to delete this document?')) {
+            deleteMutation.mutate(id);
+          }
+        }}
+      />
     </div>
   );
 };
