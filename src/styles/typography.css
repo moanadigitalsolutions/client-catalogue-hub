@@ -4,22 +4,22 @@
   }
 
   h1 {
-    @apply text-3xl font-bold tracking-tight;
+    @apply text-2xl font-bold tracking-tight;
   }
 
   h2 {
-    @apply text-2xl font-semibold tracking-tight;
-  }
-
-  h3 {
     @apply text-xl font-semibold tracking-tight;
   }
 
-  h4 {
+  h3 {
     @apply text-lg font-semibold tracking-tight;
   }
 
+  h4 {
+    @apply text-base font-semibold tracking-tight;
+  }
+
   p {
-    @apply leading-7 [&:not(:first-child)]:mt-6;
+    @apply leading-6 [&:not(:first-child)]:mt-4;
   }
 }
