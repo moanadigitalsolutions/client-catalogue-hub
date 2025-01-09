@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormFieldList } from "./FormFieldList";
 import { NewFieldForm } from "./NewFieldForm";
@@ -6,9 +5,13 @@ import { FormField } from "@/types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { useFormFieldsSubscription } from "@/hooks/useFormFieldsSubscription";
 
 export const FormFieldsSettings = () => {
   const queryClient = useQueryClient();
+  
+  // Subscribe to form fields changes
+  useFormFieldsSubscription();
 
   const { data: fields = [], isLoading } = useQuery({
     queryKey: ['formFields'],

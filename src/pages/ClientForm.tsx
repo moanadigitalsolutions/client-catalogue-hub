@@ -8,6 +8,7 @@ import { DynamicFormField } from "@/components/client/DynamicFormField";
 import { ClientFormHeader } from "@/components/client/ClientFormHeader";
 import { DocumentUpload } from "@/components/client/DocumentUpload";
 import { useFormFields } from "@/hooks/useFormFields";
+import { useFormFieldsSubscription } from "@/hooks/useFormFieldsSubscription";
 import { supabase } from "@/lib/supabase";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,6 +24,9 @@ const ClientForm = () => {
   const queryClient = useQueryClient();
   const isEditing = Boolean(id);
   const { fields } = useFormFields();
+  
+  // Subscribe to form fields changes
+  useFormFieldsSubscription();
 
   const form = useForm<ClientFormData>({
     defaultValues: {},
