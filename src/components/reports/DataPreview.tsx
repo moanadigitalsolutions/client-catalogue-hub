@@ -3,11 +3,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { FormField } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { DateRange } from "react-day-picker";
 
 interface DataPreviewProps {
   selectedFields: string[];
   fields: FormField[];
-  dateRange?: { from: Date; to: Date };
+  dateRange?: DateRange;
 }
 
 export const DataPreview = ({ selectedFields, fields, dateRange }: DataPreviewProps) => {
