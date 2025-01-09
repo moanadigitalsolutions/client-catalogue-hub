@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DateRange } from "react-day-picker";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface ReportFiltersProps {
   dateRange: DateRange | undefined;
@@ -37,10 +38,15 @@ export const ReportFilters = ({
 }: ReportFiltersProps) => {
   return (
     <div className="mt-6 space-y-4">
-      <div className="space-y-2">
-        <Label>Date Range</Label>
-        <DatePickerWithRange date={dateRange} setDate={setDateRange} />
-      </div>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="space-y-2">
+            <Label className="text-base">Date Range</Label>
+            <DatePickerWithRange date={dateRange} setDate={setDateRange} />
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="space-y-2">
         <Label>Group By</Label>
         <Select value={groupBy} onValueChange={setGroupBy}>
@@ -54,6 +60,7 @@ export const ReportFilters = ({
           </SelectContent>
         </Select>
       </div>
+
       <div className="space-y-2">
         <Label>Sort By</Label>
         <Select value={sortBy} onValueChange={setSortBy}>
@@ -67,6 +74,7 @@ export const ReportFilters = ({
           </SelectContent>
         </Select>
       </div>
+
       <div className="space-y-2">
         <Label>Sort Order</Label>
         <Select value={sortOrder} onValueChange={setSortOrder}>
@@ -79,6 +87,7 @@ export const ReportFilters = ({
           </SelectContent>
         </Select>
       </div>
+
       <div className="space-y-2">
         <Label>Search</Label>
         <Input

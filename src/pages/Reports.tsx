@@ -18,6 +18,7 @@ import { ReportFields } from "@/components/reports/ReportFields";
 import { ReportFilters } from "@/components/reports/ReportFilters";
 import { ExportOptions } from "@/components/reports/ExportOptions";
 import { generateReport } from "@/utils/reportGenerator";
+import { DataPreview } from "@/components/reports/DataPreview";
 
 const Reports = () => {
   const { fields } = useFormFields();
@@ -40,7 +41,7 @@ const Reports = () => {
   };
 
   const handleSelectAll = () => {
-    setSelectedFields(fields.map((f) => f.id));
+    setSelectedFields(fields.map((f) => f.field_id));
   };
 
   const handleExport = async (format: "pdf" | "excel") => {
@@ -55,25 +56,8 @@ const Reports = () => {
 
     try {
       setIsExporting(true);
-      
-      // Map selected field IDs to actual field names from the database
-      const selectedFieldNames = selectedFields.map(fieldId => {
-        const field = fields.find(f => f.id === fieldId);
-        return field?.field_id || '';
-      }).filter(Boolean);
-
-      console.log("Exporting report with parameters:", {
-        format,
-        fields: selectedFieldNames,
-        dateRange,
-        groupBy,
-        sortBy,
-        sortOrder,
-        searchTerm,
-      });
-
       const result = await generateReport(format, {
-        fields: selectedFieldNames,
+        fields: selectedFields,
         dateRange: dateRange ? {
           from: dateRange.from!,
           to: dateRange.to!
@@ -84,7 +68,6 @@ const Reports = () => {
         searchTerm,
       });
 
-      // Create download link
       const url = window.URL.createObjectURL(result.blob);
       const link = document.createElement('a');
       link.href = url;
@@ -121,36 +104,34 @@ const Reports = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Reports</h1>
-        <div className="flex gap-2">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline">
-                <Filter className="mr-2 h-4 w-4" />
-                Filters
-              </Button>
-            </SheetTrigger>
-            <SheetContent>
-              <SheetHeader>
-                <SheetTitle>Report Filters</SheetTitle>
-                <SheetDescription>
-                  Configure your report filters and parameters
-                </SheetDescription>
-              </SheetHeader>
-              <ReportFilters
-                dateRange={dateRange}
-                setDateRange={setDateRange}
-                groupBy={groupBy}
-                setGroupBy={setGroupBy}
-                sortBy={sortBy}
-                setSortBy={setSortBy}
-                sortOrder={sortOrder}
-                setSortOrder={setSortOrder}
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-              />
-            </SheetContent>
-          </Sheet>
-        </div>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="outline">
+              <Filter className="mr-2 h-4 w-4" />
+              Filters
+            </Button>
+          </SheetTrigger>
+          <SheetContent>
+            <SheetHeader>
+              <SheetTitle>Report Filters</SheetTitle>
+              <SheetDescription>
+                Configure your report filters and parameters
+              </SheetDescription>
+            </SheetHeader>
+            <ReportFilters
+              dateRange={dateRange}
+              setDateRange={setDateRange}
+              groupBy={groupBy}
+              setGroupBy={setGroupBy}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+              sortOrder={sortOrder}
+              setSortOrder={setSortOrder}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+            />
+          </SheetContent>
+        </Sheet>
       </div>
 
       <Card>
@@ -167,6 +148,20 @@ const Reports = () => {
 
           <Separator />
 
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Data Preview</h3>
+            <DataPreview 
+              selectedFields={selectedFields.map(id => {
+                const field = fields.find(f => f.id === id);
+                return field?.field_id || '';
+              })}
+              fields={fields}
+              dateRange={dateRange}
+            />
+          </div>
+
+          <Separator />
+
           <ExportOptions
             selectedFormat={selectedFormat}
             setSelectedFormat={setSelectedFormat}
@@ -174,31 +169,6 @@ const Reports = () => {
             onSaveTemplate={handleSaveReportTemplate}
             disabled={selectedFields.length === 0 || isExporting}
           />
-
-          <Separator />
-
-          <div className="bg-muted p-4 rounded-lg">
-            <h4 className="font-medium mb-2">Selected Fields Preview</h4>
-            <div className="flex flex-wrap gap-2">
-              {selectedFields.length > 0 ? (
-                selectedFields.map((fieldId) => {
-                  const field = fields.find((f) => f.id === fieldId);
-                  return (
-                    <span
-                      key={fieldId}
-                      className="bg-primary/10 text-primary px-2 py-1 rounded-md text-sm"
-                    >
-                      {field?.label}
-                    </span>
-                  );
-                })
-              ) : (
-                <span className="text-muted-foreground text-sm">
-                  No fields selected
-                </span>
-              )}
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>
