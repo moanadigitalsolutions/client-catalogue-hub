@@ -20,10 +20,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
 
   useEffect(() => {
-    // Initialize auth state
     const initializeAuth = async () => {
       try {
-        // Get the current session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -32,6 +30,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         if (session?.user) {
+          console.log('Found existing session for user:', session.user.id);
           setUser(session.user);
           if (location.pathname === '/login') {
             navigate('/dashboard');
@@ -39,7 +38,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
-        // Clear any potentially invalid stored session
         localStorage.removeItem('sb-ffamaeearrzchaxuamcl-auth-token');
       } finally {
         setLoading(false);
@@ -48,20 +46,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     initializeAuth();
 
-    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session?.user?.id);
       
-      if (event === 'SIGNED_IN') {
-        setUser(session?.user ?? null);
-        navigate('/dashboard');
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-        navigate('/login');
-      } else if (event === 'TOKEN_REFRESHED') {
-        setUser(session?.user ?? null);
-      } else if (event === 'USER_UPDATED') {
-        setUser(session?.user ?? null);
+      switch (event) {
+        case 'SIGNED_IN':
+          setUser(session?.user ?? null);
+          navigate('/dashboard');
+          break;
+        case 'SIGNED_OUT':
+          setUser(null);
+          navigate('/login');
+          break;
+        case 'TOKEN_REFRESHED':
+        case 'USER_UPDATED':
+          setUser(session?.user ?? null);
+          break;
+        default:
+          console.log('Unhandled auth event:', event);
       }
     });
 
@@ -75,7 +77,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(true);
       console.log("AuthContext: Attempting sign in with email:", email);
       
-      // First try Supabase authentication
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -83,7 +84,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) {
         console.log("Supabase auth failed, trying temp admin:", error.message);
-        // If Supabase auth fails, try temp admin login
         if (email === "admin@temp.com" && password === "admin123") {
           console.log("AuthContext: Temp admin login successful");
           const mockUser = {
@@ -114,7 +114,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log("AuthContext: Redirecting to:", from);
         navigate(from, { replace: true });
       }
-      
     } catch (error) {
       console.error("AuthContext: Sign in error:", error);
       toast.error("Invalid email or password");
@@ -129,7 +128,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
-      // Clear any stored session data
       localStorage.removeItem('sb-ffamaeearrzchaxuamcl-auth-token');
       setUser(null);
       navigate('/login');

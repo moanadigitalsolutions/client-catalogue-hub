@@ -1,30 +1,30 @@
 @layer base {
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground antialiased min-h-screen;
   }
 
   h1 {
-    @apply scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl;
+    @apply scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl text-foreground;
   }
 
   h2 {
-    @apply scroll-m-20 text-3xl font-semibold tracking-tight transition-colors first:mt-0;
+    @apply scroll-m-20 text-3xl font-semibold tracking-tight transition-colors first:mt-0 text-foreground;
   }
 
   h3 {
-    @apply scroll-m-20 text-2xl font-semibold tracking-tight;
+    @apply scroll-m-20 text-2xl font-semibold tracking-tight text-foreground;
   }
 
   h4 {
-    @apply scroll-m-20 text-xl font-semibold tracking-tight;
+    @apply scroll-m-20 text-xl font-semibold tracking-tight text-foreground;
   }
 
   p {
-    @apply leading-7 [&:not(:first-child)]:mt-6;
+    @apply leading-7 [&:not(:first-child)]:mt-6 text-foreground;
   }
 
   blockquote {
-    @apply mt-6 border-l-2 border-primary pl-6 italic;
+    @apply mt-6 border-l-2 border-primary pl-6 italic text-foreground;
   }
 
   ul {
