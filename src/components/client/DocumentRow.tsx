@@ -4,6 +4,7 @@ import { FileText, Image as ImageIcon } from "lucide-react";
 import { DocumentRowProps } from "@/types/documents";
 import { useDocumentPreview } from "@/hooks/useDocumentPreview";
 import { DocumentPreviewDialog } from "./DocumentPreviewDialog";
+import { format } from "date-fns"; // Added this import
 
 export const DocumentRow = ({
   document: clientDocument,
