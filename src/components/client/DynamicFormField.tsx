@@ -25,6 +25,8 @@ export const DynamicFormField = ({ field, form }: DynamicFormFieldProps) => {
         return <SelectFormField field={field} form={form} />;
       case "radio":
         return <RadioFormField field={field} form={form} />;
+      case "url":
+        return <TextFormField field={field} form={form} />;
       default:
         return <TextFormField field={field} form={form} />;
     }
