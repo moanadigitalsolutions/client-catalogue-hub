@@ -9,6 +9,48 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      client_activities: {
+        Row: {
+          activity_type: Database["public"]["Enums"]["client_activity_type"]
+          client_id: string
+          created_at: string
+          description: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          activity_type: Database["public"]["Enums"]["client_activity_type"]
+          client_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          activity_type?: Database["public"]["Enums"]["client_activity_type"]
+          client_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_activities_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_activities_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_deletion_requests: {
         Row: {
           client_id: string | null
@@ -339,6 +381,12 @@ export type Database = {
       }
     }
     Enums: {
+      client_activity_type:
+        | "created"
+        | "updated"
+        | "document_added"
+        | "document_removed"
+        | "note_added"
       client_deletion_status: "pending" | "approved" | "rejected"
       user_role: "admin" | "employee"
     }
