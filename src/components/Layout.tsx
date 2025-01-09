@@ -14,18 +14,18 @@ const Layout = () => {
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <AppSidebar />
-        <main className="flex-1 p-4">
-          <div className="flex justify-between items-start mb-3">
+        <main className="flex-1 p-5">
+          <div className="flex justify-between items-start mb-4">
             <Breadcrumbs />
             <Button variant="ghost" onClick={signOut} size="sm">
               <LogOut className="h-4 w-4 mr-2" />
               Logout
             </Button>
           </div>
-          <div className="grid gap-4">
+          <div className="grid gap-5">
             <Outlet />
           </div>
-          <div className="fixed bottom-4 right-4">
+          <div className="fixed bottom-5 right-5">
             <HelpGuide />
           </div>
         </main>

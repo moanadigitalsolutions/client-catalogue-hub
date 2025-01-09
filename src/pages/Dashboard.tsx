@@ -17,9 +17,9 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <QuickActions />
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
         <DashboardMetricCard 
           title="Total Clients" 
           value={metrics.totalClients}
@@ -36,7 +36,7 @@ const Dashboard = () => {
           description="Currently active clients" 
         />
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-2">
         <ClientsByCityChart data={metrics.cityData} />
         <MonthlyGrowthChart data={metrics.monthlyData} />
       </div>
