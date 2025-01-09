@@ -87,17 +87,24 @@ export const UserList = () => {
         return;
       }
 
-      // Finally delete from auth.users using Supabase admin API
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+      // Call the Edge Function to delete the auth user
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ userId }),
+      });
 
-      if (authError) {
-        console.error('Error deleting auth user:', authError);
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('Error deleting auth user:', error);
         toast.error('Failed to delete user');
         return;
       }
 
       toast.success('User deleted successfully');
-      // Refresh the users list after successful deletion
       refetch();
     } catch (error) {
       console.error('Error in handleDeleteUser:', error);
