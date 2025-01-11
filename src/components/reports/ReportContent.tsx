@@ -106,7 +106,7 @@ export const ReportContent = ({
           fields: selectedFields,
           formulas: formulas,
           format: selectedFormat,
-          user_id: session.user.id // Add the user_id here
+          user_id: session.user.id
         });
 
       if (error) throw error;
