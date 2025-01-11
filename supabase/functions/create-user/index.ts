@@ -1,115 +1,107 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-Deno.serve(async (req) => {
-  // Handle CORS preflight requests
+serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    console.log('Create user function called')
-    
-    const supabaseClient = createClient(
+    const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { email, name, role } = await req.json()
-    console.log('Creating user with details:', { email, name, role })
+    const { email, password, name, role } = await req.json()
 
-    if (!email || !name || !role) {
-      throw new Error('email, name and role are required')
-    }
-
-    // Generate a temporary password
-    const tempPassword = Math.random().toString(36).slice(-8)
-
-    // Create the user with admin API
-    const { data: userData, error: createError } = await supabaseClient.auth.admin.createUser({
-      email,
-      password: tempPassword,
-      email_confirm: true,
-      user_metadata: { name }
+    // Check if user exists in auth.users
+    const { data: existingAuthUser } = await supabase.auth.admin.listUsers({
+      filter: { email }
     })
 
-    if (createError) {
-      console.error('Error creating user:', createError)
-      throw createError
-    }
+    const existingUser = existingAuthUser?.users?.[0]
 
-    if (!userData.user) {
-      throw new Error('No user data returned')
-    }
-
-    console.log('User created successfully:', userData.user.id)
-
-    // Check if role already exists for user
-    const { data: existingRole } = await supabaseClient
-      .from('user_roles')
+    // Check profiles table
+    const { data: existingProfile } = await supabase
+      .from('profiles')
       .select('*')
-      .eq('user_id', userData.user.id)
+      .eq('email', email)
       .single()
 
-    if (!existingRole) {
-      // Only assign role if one doesn't exist
-      const { error: roleError } = await supabaseClient
-        .from('user_roles')
-        .insert({
-          user_id: userData.user.id,
-          role
-        })
+    if (existingUser || existingProfile) {
+      if (existingProfile && !existingProfile.is_active) {
+        // Reactivate user
+        if (existingUser?.id) {
+          await supabase.auth.admin.updateUserById(existingUser.id, {
+            password,
+            email_confirm: true
+          })
+        } else {
+          // Create new auth user if it doesn't exist
+          const { data: newAuthUser, error: createError } = await supabase.auth.admin.createUser({
+            email,
+            password,
+            email_confirm: true,
+          })
+          if (createError) throw createError
+        }
 
-      if (roleError) {
-        console.error('Error assigning role:', roleError)
-        throw roleError
+        // Update profile
+        await supabase
+          .from('profiles')
+          .update({ 
+            is_active: true,
+            name,
+            email 
+          })
+          .eq('email', email)
+
+        // Update or create role
+        if (existingProfile.id) {
+          await supabase
+            .from('user_roles')
+            .upsert({
+              user_id: existingProfile.id,
+              role
+            })
+        }
+
+        return new Response(
+          JSON.stringify({ success: true, reactivated: true }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
       }
 
-      console.log('Role assigned successfully')
-    } else {
-      console.log('User already has a role assigned')
+      throw new Error('User already exists and is active')
     }
 
-    // Generate password reset link
-    const { data: resetData, error: resetError } = await supabaseClient.auth.admin.generateLink({
-      type: 'recovery',
+    // Create new user
+    const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
       email,
+      password,
+      email_confirm: true,
     })
 
-    if (resetError) {
-      console.error('Error generating reset link:', resetError)
-      throw resetError
-    }
+    if (createError) throw createError
 
-    console.log('Password reset link generated successfully')
-
+    // Profile and role will be created by triggers
     return new Response(
-      JSON.stringify({ 
-        message: 'User created successfully',
-        userId: userData.user.id 
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
+      JSON.stringify({ success: true, userId: newUser.user.id }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
+
   } catch (error) {
-    console.error('Error in create-user function:', error)
+    console.error('Error:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      { 
         status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
   }

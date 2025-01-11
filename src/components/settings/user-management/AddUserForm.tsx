@@ -51,79 +51,28 @@ export const AddUserForm = ({ onUserAdded, loading }: AddUserFormProps) => {
       setIsSubmitting(true);
       console.log("Creating new user:", { ...values, password: "[REDACTED]" });
 
-      // First check if user exists
-      const { data: existingUser } = await supabase
-        .from('profiles')
-        .select('id, is_active')
-        .eq('email', values.email)
-        .maybeSingle();
-
-      if (existingUser) {
-        if (!existingUser.is_active) {
-          toast.error("This user has been deactivated. Please reactivate their account instead of creating a new one.");
-        } else {
-          toast.error("A user with this email already exists.");
+      // Call the edge function to create/reactivate user
+      const { data, error: functionError } = await supabase.functions.invoke('create-user', {
+        body: {
+          email: values.email,
+          password: values.password,
+          name: values.name,
+          role: values.role
         }
-        return;
-      }
-
-      // Create the user
-      const { data: userData, error: signUpError } = await supabase.auth.signUp({
-        email: values.email,
-        password: values.password,
-        options: {
-          data: {
-            name: values.name,
-          },
-        },
       });
 
-      if (signUpError) {
-        console.error("Error creating user:", signUpError);
-        if (signUpError.message === "User already registered") {
-          toast.error("A user with this email already exists.");
-        } else {
-          toast.error(signUpError.message);
-        }
-        return;
-      }
-
-      if (!userData.user) {
+      if (functionError) {
+        console.error("Error from create-user function:", functionError);
         toast.error("Failed to create user");
         return;
       }
 
-      // Insert into profiles
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: userData.user.id,
-          name: values.name,
-          email: values.email,
-          is_active: true
-        });
-
-      if (profileError) {
-        console.error("Error creating profile:", profileError);
-        toast.error("Failed to create user profile");
-        return;
+      if (data?.reactivated) {
+        toast.success("User account has been reactivated");
+      } else {
+        toast.success("User created successfully");
       }
 
-      // Assign role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: userData.user.id,
-          role: values.role,
-        });
-
-      if (roleError) {
-        console.error("Error assigning role:", roleError);
-        toast.error("Failed to assign user role");
-        return;
-      }
-
-      toast.success("User created successfully");
       form.reset();
       onUserAdded();
     } catch (error) {
