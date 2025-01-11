@@ -17,7 +17,12 @@ export const filterDataByDateRange = (data: ReportData[], dateRange: DateRange |
     }
 
     try {
-      const rowDate = new Date(row.created_at);
+      const dateValue = row.created_at;
+      const rowDate = typeof dateValue === 'string' 
+        ? parseISO(dateValue)
+        : dateValue instanceof Date 
+          ? dateValue 
+          : new Date(Number(dateValue));
       
       if (!isValid(rowDate)) {
         console.log('Invalid date found:', row.created_at);

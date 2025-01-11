@@ -155,7 +155,7 @@ const fetchReportData = async (fields: string[], dateRange?: DateRange): Promise
       return [];
     }
 
-    if (!data) return [];
+    if (!data || !Array.isArray(data)) return [];
     
     // Transform the data back to use birth_date instead of dob in the response
     return data.map(row => {
@@ -165,7 +165,7 @@ const fetchReportData = async (fields: string[], dateRange?: DateRange): Promise
         typedRow[field] = row[dbField] ?? null;
       });
       // Always include created_at in the response
-      typedRow.created_at = row.created_at;
+      typedRow.created_at = row.created_at ?? null;
       return typedRow;
     });
 
