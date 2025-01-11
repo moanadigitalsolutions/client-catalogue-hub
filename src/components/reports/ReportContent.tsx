@@ -8,12 +8,10 @@ import { ExportOptions } from "./ExportOptions";
 import { FormulaBuilder, ReportFormula } from "./FormulaBuilder";
 import { useState, useEffect } from "react";
 import { ReportData } from "@/utils/reportGenerator";
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { parseISO, isValid } from "date-fns";
+import { DateRangeFilter } from "./filters/DateRangeFilter";
+import { filterDataByDateRange } from "@/utils/dateFilters";
 
 interface ReportContentProps {
   fields: FormField[];
@@ -59,41 +57,7 @@ export const ReportContent = ({
 
   const handleApplyFilter = () => {
     console.log('Applying date filter:', filterDateRange);
-    if (!filterDateRange) {
-      setFilteredData(previewData);
-      return;
-    }
-
-    const filtered = previewData.filter(row => {
-      // If there's no created_at, we'll include the row
-      if (!row.created_at) return true;
-
-      // Ensure created_at is a valid date string
-      if (typeof row.created_at !== 'string' && typeof row.created_at !== 'number') {
-        console.log('Invalid created_at type:', typeof row.created_at, row.created_at);
-        return true;
-      }
-
-      try {
-        const rowDate = parseISO(row.created_at.toString());
-        if (!isValid(rowDate)) {
-          console.log('Invalid date:', row.created_at);
-          return true;
-        }
-
-        const fromDate = filterDateRange.from;
-        const toDate = filterDateRange.to;
-
-        if (!fromDate) return true;
-        if (!toDate) return rowDate >= fromDate;
-        
-        return rowDate >= fromDate && rowDate <= toDate;
-      } catch (error) {
-        console.error('Error parsing date:', error);
-        return true;
-      }
-    });
-
+    const filtered = filterDataByDateRange(previewData, filterDateRange);
     console.log('Filtered data:', filtered);
     setFilteredData(filtered);
   };
@@ -186,18 +150,11 @@ export const ReportContent = ({
 
         <Separator />
 
-        <div className="space-y-4">
-          <Label>Date Range Filter</Label>
-          <div className="flex gap-4 items-end">
-            <DatePickerWithRange
-              date={filterDateRange}
-              setDate={setFilterDateRange}
-            />
-            <Button onClick={handleApplyFilter}>
-              Apply Filter
-            </Button>
-          </div>
-        </div>
+        <DateRangeFilter
+          filterDateRange={filterDateRange}
+          setFilterDateRange={setFilterDateRange}
+          onApplyFilter={handleApplyFilter}
+        />
 
         <Separator />
 
