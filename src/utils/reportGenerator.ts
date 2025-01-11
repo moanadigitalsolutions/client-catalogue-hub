@@ -4,6 +4,7 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { supabase } from "@/lib/supabase";
 import { DateRange } from "react-day-picker";
+import { Database } from "@/integrations/supabase/types";
 
 export interface ReportData {
   [key: string]: string | number | boolean | null | Date;
@@ -138,7 +139,7 @@ const fetchReportData = async (fields: string[], dateRange?: DateRange): Promise
     
     let query = supabase
       .from('clients')
-      .select(mappedFields.join(','));
+      .select<'*', Database['public']['Tables']['clients']['Row']>(mappedFields.join(','));
 
     // Add date range filter if provided
     if (dateRange?.from) {
@@ -162,7 +163,7 @@ const fetchReportData = async (fields: string[], dateRange?: DateRange): Promise
       const typedRow: ReportData = {};
       fields.forEach((field, index) => {
         const dbField = mappedFields[index];
-        typedRow[field] = row[dbField] ?? null;
+        typedRow[field] = row[dbField as keyof typeof row] ?? null;
       });
       // Always include created_at in the response
       typedRow.created_at = row.created_at ?? null;
