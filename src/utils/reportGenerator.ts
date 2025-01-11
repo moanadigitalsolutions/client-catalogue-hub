@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { DateRange } from "react-day-picker";
 
 export interface ReportData {
-  [key: string]: string | number | boolean | null;
+  [key: string]: string | number | boolean | null | Date;
 }
 
 export interface ReportOptions {
@@ -18,7 +18,7 @@ export const formatValue = (value: any, fieldType: string) => {
   if (value === null || value === undefined) return '';
 
   // Handle date fields
-  if (fieldType === 'dob' || fieldType === 'date') {
+  if (fieldType === 'dob' || fieldType === 'date' || fieldType === 'created_at') {
     try {
       return format(new Date(value), 'dd/MM/yyyy');
     } catch (error) {
@@ -130,8 +130,11 @@ const fetchReportData = async (fields: string[], dateRange?: DateRange): Promise
   console.log('Date range:', dateRange);
   
   try {
+    // Always include created_at in the query
+    const fieldsToFetch = [...new Set([...fields, 'created_at'])];
+    
     // Map birth_date to dob if it exists in the fields array
-    const mappedFields = fields.map(field => field === 'birth_date' ? 'dob' : field);
+    const mappedFields = fieldsToFetch.map(field => field === 'birth_date' ? 'dob' : field);
     
     let query = supabase
       .from('clients')
@@ -161,6 +164,8 @@ const fetchReportData = async (fields: string[], dateRange?: DateRange): Promise
         const dbField = mappedFields[index];
         typedRow[field] = row[dbField] ?? null;
       });
+      // Always include created_at in the response
+      typedRow.created_at = row.created_at;
       return typedRow;
     });
 

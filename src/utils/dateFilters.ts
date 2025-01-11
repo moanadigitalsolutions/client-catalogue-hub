@@ -1,6 +1,6 @@
-import { ReportData } from "./reportGenerator";
-import { DateRange } from "react-day-picker";
 import { parseISO, isValid, isBefore, isAfter, startOfDay, endOfDay } from "date-fns";
+import { DateRange } from "react-day-picker";
+import { ReportData } from "./reportGenerator";
 
 export const filterDataByDateRange = (data: ReportData[], dateRange: DateRange | undefined): ReportData[] => {
   console.log('Filtering data with date range:', dateRange);
@@ -17,11 +17,7 @@ export const filterDataByDateRange = (data: ReportData[], dateRange: DateRange |
     }
 
     try {
-      const rowDate = typeof row.created_at === 'string' 
-        ? parseISO(row.created_at)
-        : row.created_at instanceof Date 
-          ? row.created_at 
-          : new Date(row.created_at as number);
+      const rowDate = new Date(row.created_at);
       
       if (!isValid(rowDate)) {
         console.log('Invalid date found:', row.created_at);
