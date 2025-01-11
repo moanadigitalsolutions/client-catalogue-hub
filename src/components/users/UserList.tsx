@@ -107,9 +107,18 @@ export const UserList = () => {
         return;
       }
 
-      toast.success('User name updated successfully');
-      // Immediately invalidate and refetch the users query
+      // Optimistically update the local cache
+      queryClient.setQueryData(['users'], (oldData: any) => {
+        if (!oldData) return oldData;
+        return oldData.map((user: any) => 
+          user.id === userId ? { ...user, name: editingName } : user
+        );
+      });
+
+      // Then invalidate to ensure we're in sync with the server
       await queryClient.invalidateQueries({ queryKey: ['users'] });
+      
+      toast.success('User name updated successfully');
       cancelEditing();
     } catch (error) {
       console.error('Error in handleUpdateName:', error);
