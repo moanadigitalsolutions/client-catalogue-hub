@@ -94,29 +94,44 @@ export const UserList = () => {
 
   const handleUpdateName = async (userId: string) => {
     try {
+      setLoading(true);
       console.log('Starting name update for user:', userId, 'New name:', editingName);
       
-      const { error } = await supabase
+      // Update the profile in the database
+      const { error: updateError } = await supabase
         .from('profiles')
         .update({ name: editingName })
         .eq('id', userId);
 
-      if (error) {
-        console.error('Error updating user name:', error);
+      if (updateError) {
+        console.error('Error updating user name:', updateError);
         toast.error('Failed to update user name');
         return;
       }
 
-      // Immediately update the local cache with the new name
+      // Fetch the updated data to ensure we have the latest state
+      const { data: updatedProfile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .eq('id', userId)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching updated profile:', fetchError);
+        toast.error('Failed to fetch updated user data');
+        return;
+      }
+
+      // Update the local cache with the confirmed data from the server
       const oldData = queryClient.getQueryData(['users']) as any[];
       if (oldData) {
         const newData = oldData.map(user => 
-          user.id === userId ? { ...user, name: editingName } : user
+          user.id === userId ? { ...user, name: updatedProfile.name || 'Unnamed User' } : user
         );
         queryClient.setQueryData(['users'], newData);
       }
 
-      // Force an immediate refetch to ensure we're in sync with the server
+      // Force an immediate refetch to ensure we're fully in sync
       await queryClient.invalidateQueries({ queryKey: ['users'] });
       
       toast.success('User name updated successfully');
@@ -124,6 +139,8 @@ export const UserList = () => {
     } catch (error) {
       console.error('Error in handleUpdateName:', error);
       toast.error('Failed to update user name');
+    } finally {
+      setLoading(false);
     }
   };
 
