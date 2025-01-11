@@ -4,6 +4,7 @@ import { ReportData } from "@/utils/reportGenerator";
 import { ReportFormula } from "./FormulaBuilder";
 import { calculateFormulaResult } from "@/utils/formulaCalculator";
 import { DateRange } from "react-day-picker";
+import { startOfDay, endOfDay, parseISO } from "date-fns";
 
 interface DataPreviewProps {
   data: ReportData[];
@@ -19,9 +20,13 @@ export const DataPreview = ({ data, displayFields, isLoading, formulas = [], dat
   // Filter data by client creation date if date range is provided
   const filteredData = dateRange?.from 
     ? data.filter(row => {
-        const creationDate = new Date(row.created_at as string);
-        return creationDate >= dateRange.from! && 
-               (!dateRange.to || creationDate <= dateRange.to);
+        const creationDate = parseISO(row.created_at as string);
+        const fromDate = startOfDay(dateRange.from!);
+        const toDate = dateRange.to ? endOfDay(dateRange.to) : undefined;
+        
+        return toDate 
+          ? creationDate >= fromDate && creationDate <= toDate
+          : creationDate >= fromDate;
       })
     : data;
 
@@ -51,6 +56,8 @@ export const DataPreview = ({ data, displayFields, isLoading, formulas = [], dat
   const finalData = totalsRow 
     ? [...enrichedData, totalsRow]
     : enrichedData;
+
+  console.log('Filtered and enriched data:', finalData);
 
   return (
     <Card>
