@@ -1,5 +1,3 @@
-import { format } from "date-fns";
-
 export interface ReportData {
   [key: string]: string | number | boolean;
   dob?: string;

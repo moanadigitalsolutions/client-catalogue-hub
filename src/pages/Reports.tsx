@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useFormFields } from "@/hooks/useFormFields";
 import { useToast } from "@/hooks/use-toast";
 import { DateRange } from "react-day-picker";
-import { generateReport } from "@/utils/reportGenerator";
+import { generateReport, ReportData } from "@/utils/reportGenerator";
 import { ReportHeader } from "@/components/reports/ReportHeader";
 import { ReportContent } from "@/components/reports/ReportContent";
 import { ReportFilters } from "@/components/reports/ReportFilters";
@@ -14,6 +14,7 @@ const Reports = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [selectedFormat, setSelectedFormat] = useState<"pdf" | "excel">("pdf");
   const [isExporting, setIsExporting] = useState(false);
+  const [previewData, setPreviewData] = useState<ReportData[]>([]);
 
   const handleFieldToggle = (fieldId: string) => {
     setSelectedFields((prev) =>
@@ -100,6 +101,7 @@ const Reports = () => {
         onExport={handleExport}
         onSaveTemplate={handleSaveReportTemplate}
         isExporting={isExporting}
+        previewData={previewData}
       />
     </div>
   );

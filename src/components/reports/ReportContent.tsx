@@ -20,6 +20,7 @@ interface ReportContentProps {
   onExport: (format: "pdf" | "excel") => void;
   onSaveTemplate: () => void;
   isExporting: boolean;
+  previewData: ReportData[];
 }
 
 export const ReportContent = ({
@@ -33,9 +34,9 @@ export const ReportContent = ({
   onExport,
   onSaveTemplate,
   isExporting,
+  previewData,
 }: ReportContentProps) => {
   const [formulas, setFormulas] = useState<ReportFormula[]>([]);
-  const [previewData, setPreviewData] = useState<ReportData[]>([]);
 
   const handleAddFormula = (formula: ReportFormula) => {
     setFormulas(prev => [...prev, formula]);
