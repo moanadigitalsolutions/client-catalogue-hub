@@ -16,6 +16,7 @@ interface ClientActivity {
   created_at: string;
   profiles: {
     name: string | null;
+    email: string | null;
   };
 }
 
@@ -60,7 +61,7 @@ export const ClientHistory = ({ clientId }: ClientHistoryProps) => {
         .from('client_activities')
         .select(`
           *,
-          profiles (name)
+          profiles (name, email)
         `)
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
@@ -104,7 +105,7 @@ export const ClientHistory = ({ clientId }: ClientHistoryProps) => {
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium">
-                        {activity.profiles?.name || 'Unknown User'}
+                        {activity.profiles?.email || 'Unknown User'}
                       </p>
                       <time className="text-sm text-muted-foreground">
                         {format(new Date(activity.created_at), 'MMM d, yyyy HH:mm')}

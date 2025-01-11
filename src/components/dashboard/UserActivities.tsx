@@ -44,7 +44,7 @@ const UserActivities = () => {
         .from('user_activities')
         .select(`
           *,
-          profiles (name)
+          profiles (name, email)
         `)
         .order('created_at', { ascending: false });
 
@@ -114,7 +114,7 @@ const UserActivities = () => {
               <div key={activity.id} className="flex items-center justify-between py-2 border-b last:border-0">
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">
-                    {activity.profiles?.name || 'Unknown User'}
+                    {activity.profiles?.email || 'Unknown User'}
                   </span>
                   <span className="text-sm text-muted-foreground">
                     {activity.activity_type}
