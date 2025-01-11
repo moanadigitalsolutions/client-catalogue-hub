@@ -4,18 +4,19 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DocumentUpload } from "@/components/client/DocumentUpload";
 import { ClientHistory } from "@/components/client/ClientHistory";
 import { trackActivity } from "@/utils/activity";
+import { ClientFormFields } from "@/components/client/ClientFormFields";
+import { useFormFields } from "@/hooks/useFormFields";
 
 const ClientForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { register, handleSubmit: hookFormSubmit, reset } = useForm();
+  const form = useForm();
+  const { fields } = useFormFields();
 
   useEffect(() => {
     const fetchClient = async () => {
@@ -32,7 +33,7 @@ const ClientForm = () => {
         if (error) throw error;
         if (data) {
           console.log('Client data fetched:', data);
-          reset(data);
+          form.reset(data);
         }
       } catch (error) {
         console.error('Error fetching client:', error);
@@ -41,7 +42,7 @@ const ClientForm = () => {
     };
 
     fetchClient();
-  }, [id, reset]);
+  }, [id, form.reset]);
 
   const handleSubmit = async (data: any) => {
     try {
@@ -101,31 +102,8 @@ const ClientForm = () => {
               <CardTitle>Client Information</CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={hookFormSubmit(handleSubmit)} className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Name</Label>
-                  <Input id="name" {...register('name')} required />
-                </div>
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" {...register('email')} required />
-                </div>
-                <div>
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input id="phone" {...register('phone')} />
-                </div>
-                <div>
-                  <Label htmlFor="company">Company</Label>
-                  <Input id="company" {...register('company')} />
-                </div>
-                <div>
-                  <Label htmlFor="website">Website</Label>
-                  <Input id="website" {...register('website')} />
-                </div>
-                <div>
-                  <Label htmlFor="notes">Notes</Label>
-                  <Input id="notes" {...register('notes')} />
-                </div>
+              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                <ClientFormFields form={form} fields={fields} />
                 <div className="flex justify-end space-x-2">
                   <Button
                     type="button"
