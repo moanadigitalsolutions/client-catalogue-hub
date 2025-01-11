@@ -34,20 +34,26 @@ const UserActivities = () => {
     enabled: !!user?.id,
   });
 
-  // Only fetch activities if user is admin
+  // Fetch activities based on user role
   const { data: activities, isLoading } = useQuery({
-    queryKey: ['user-activities'],
+    queryKey: ['user-activities', user?.id, userRole, isExpanded],
     queryFn: async () => {
-      console.log('Fetching user activities...');
+      console.log('Fetching user activities...', { userRole, userId: user?.id });
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('user_activities')
         .select(`
           *,
           profiles (name)
         `)
-        .order('created_at', { ascending: false })
-        .limit(isExpanded ? 50 : 10);
+        .order('created_at', { ascending: false });
+
+      // If not admin, only show user's own activities
+      if (userRole !== 'admin') {
+        query = query.eq('user_id', user?.id);
+      }
+
+      const { data, error } = await query.limit(isExpanded ? 50 : 10);
 
       if (error) {
         console.error('Error fetching activities:', error);
@@ -57,13 +63,8 @@ const UserActivities = () => {
       console.log('Fetched activities:', data);
       return data || [];
     },
-    enabled: userRole === 'admin', // Only fetch if user is admin
+    enabled: !!user?.id && !!userRole,
   });
-
-  // If user is not admin, don't render anything
-  if (userRole !== 'admin') {
-    return null;
-  }
 
   if (isLoading) {
     return (
@@ -82,10 +83,17 @@ const UserActivities = () => {
     );
   }
 
+  // Don't show anything if there's no user role yet
+  if (!userRole) {
+    return null;
+  }
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Recent Activities</CardTitle>
+        <CardTitle>
+          {userRole === 'admin' ? 'All Recent Activities' : 'Your Recent Activities'}
+        </CardTitle>
         <Button
           variant="ghost"
           size="sm"

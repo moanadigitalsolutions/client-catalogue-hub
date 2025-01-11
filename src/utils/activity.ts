@@ -6,11 +6,18 @@ export const trackActivity = async (activityType: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    await supabase
+    const { error } = await supabase
       .from('user_activities')
       .insert([
         { user_id: user.id, activity_type: activityType }
       ]);
+      
+    if (error) {
+      console.error('Error tracking activity:', error);
+      throw error;
+    }
+    
+    console.log('Activity tracked successfully');
   } catch (error) {
     console.error('Error tracking activity:', error);
   }
