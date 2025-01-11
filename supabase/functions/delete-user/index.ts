@@ -59,14 +59,25 @@ Deno.serve(async (req) => {
     }
 
     // Update user activities to set user_id to null
-    const { error: activitiesError } = await supabaseClient
+    const { error: userActivitiesError } = await supabaseClient
       .from('user_activities')
       .update({ user_id: null })
       .eq('user_id', userId)
 
-    if (activitiesError) {
-      console.error('Error updating activities:', activitiesError)
-      throw activitiesError
+    if (userActivitiesError) {
+      console.error('Error updating user activities:', userActivitiesError)
+      throw userActivitiesError
+    }
+
+    // Update client activities to set user_id to null
+    const { error: clientActivitiesError } = await supabaseClient
+      .from('client_activities')
+      .update({ user_id: null })
+      .eq('user_id', userId)
+
+    if (clientActivitiesError) {
+      console.error('Error updating client activities:', clientActivitiesError)
+      throw clientActivitiesError
     }
 
     console.log('Dependencies handled, proceeding with profile deactivation')
