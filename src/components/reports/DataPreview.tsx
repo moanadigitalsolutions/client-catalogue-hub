@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { TableContent } from "./table/TableContent";
 import { ReportData } from "@/utils/reportGenerator";

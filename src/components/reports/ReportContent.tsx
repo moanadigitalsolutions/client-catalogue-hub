@@ -7,6 +7,7 @@ import { DataPreview } from "./DataPreview";
 import { ExportOptions } from "./ExportOptions";
 import { FormulaBuilder, ReportFormula } from "./FormulaBuilder";
 import { useState } from "react";
+import { ReportData } from "@/utils/reportGenerator";
 
 interface ReportContentProps {
   fields: FormField[];
@@ -34,6 +35,7 @@ export const ReportContent = ({
   isExporting,
 }: ReportContentProps) => {
   const [formulas, setFormulas] = useState<ReportFormula[]>([]);
+  const [previewData, setPreviewData] = useState<ReportData[]>([]);
 
   const handleAddFormula = (formula: ReportFormula) => {
     setFormulas(prev => [...prev, formula]);
@@ -64,10 +66,9 @@ export const ReportContent = ({
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Data Preview</h3>
           <DataPreview 
-            selectedFields={selectedFields}
-            fields={fields}
-            dateRange={dateRange}
-            formulas={formulas}
+            data={previewData}
+            displayFields={selectedFields}
+            isLoading={isExporting}
           />
         </div>
 

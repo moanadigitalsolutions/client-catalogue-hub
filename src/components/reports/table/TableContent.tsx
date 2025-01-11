@@ -11,11 +11,11 @@ interface TableContentProps {
 
 export const TableContent = ({ data, columns, isLoading }: TableContentProps) => {
   if (isLoading) {
-    return <LoadingState />;
+    return <LoadingState colSpan={columns.length} />;
   }
 
   if (!data || data.length === 0) {
-    return <NoDataState />;
+    return <NoDataState colSpan={columns.length} />;
   }
 
   return (

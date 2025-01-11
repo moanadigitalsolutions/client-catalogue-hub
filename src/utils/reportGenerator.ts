@@ -5,6 +5,14 @@ export interface ReportData {
   dob?: string;
 }
 
+export interface ReportOptions {
+  fields: string[];
+  dateRange?: {
+    from: Date;
+    to: Date;
+  };
+}
+
 export const formatValue = (value: any, fieldType: string) => {
   if (value === null || value === undefined) return '';
 
@@ -34,4 +42,13 @@ export const formatValue = (value: any, fieldType: string) => {
   }
 
   return String(value);
+};
+
+export const generateReport = async (format: "pdf" | "excel", options: ReportOptions) => {
+  // Mock implementation for now
+  const mockBlob = new Blob(['Sample report content'], { type: 'text/plain' });
+  return {
+    blob: mockBlob,
+    filename: `report.${format}`
+  };
 };
