@@ -14,20 +14,25 @@ interface UserListProps {
 export const UserList = ({ users, loading, currentUserId, onUserDeleted }: UserListProps) => {
   const handleRemoveUser = async (id: string) => {
     try {
-      // First delete from auth.users (this will cascade to profiles and roles)
-      const { error: deleteError } = await supabase.auth.admin.deleteUser(id);
+      console.log('Calling delete-user function for userId:', id);
+      
+      // Call the Edge Function to delete the user using the supabase client
+      const { data: functionData, error: functionError } = await supabase.functions.invoke('delete-user', {
+        body: { userId: id }
+      });
 
-      if (deleteError) {
-        console.error("Error deleting user:", deleteError);
-        toast.error("Failed to delete user");
+      if (functionError) {
+        console.error('Error response from delete-user function:', functionError);
+        toast.error('Failed to delete user');
         return;
       }
 
-      toast.success("User removed successfully");
+      console.log('Delete user response:', functionData);
+      toast.success('User deleted successfully');
       onUserDeleted();
     } catch (error) {
-      console.error("Error in handleRemoveUser:", error);
-      toast.error("Failed to delete user");
+      console.error('Error in handleRemoveUser:', error);
+      toast.error('Failed to delete user');
     }
   };
 

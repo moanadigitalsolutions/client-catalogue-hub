@@ -1,49 +1,39 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
-  // Handle CORS preflight requests
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    console.log('Delete user function called')
-    
-    // Create Supabase client
-    const supabaseAdmin = createClient(
+    const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       {
         auth: {
           autoRefreshToken: false,
-          persistSession: false
-        }
+          persistSession: false,
+        },
       }
     )
 
-    // Get user ID from request body
     const { userId } = await req.json()
-    console.log('Attempting to delete user:', userId)
 
     if (!userId) {
-      throw new Error('User ID is required')
+      throw new Error('userId is required')
     }
 
-    // Delete user from auth.users
-    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId)
-    
-    if (authError) {
-      console.error('Error deleting auth user:', authError)
-      throw authError
-    }
+    // Delete the user using admin API
+    const { error: deleteError } = await supabaseClient.auth.admin.deleteUser(userId)
 
-    console.log('User deleted successfully:', userId)
+    if (deleteError) {
+      throw deleteError
+    }
 
     return new Response(
       JSON.stringify({ message: 'User deleted successfully' }),
@@ -53,12 +43,8 @@ serve(async (req) => {
       }
     )
   } catch (error) {
-    console.error('Error in delete-user function:', error)
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        details: error.toString()
-      }),
+      JSON.stringify({ error: error.message }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
