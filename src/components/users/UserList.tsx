@@ -4,7 +4,8 @@ import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Trash2, Shield } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Trash2, Shield, Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { UserRoleSelect } from "./UserRoleSelect";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -13,6 +14,8 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export const UserList = () => {
   const [loading, setLoading] = useState(false);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
   const { user: currentUser } = useAuth();
 
   const { data: users, isLoading, error, refetch } = useQuery({
@@ -65,7 +68,6 @@ export const UserList = () => {
 
       console.log('Calling delete-user function for userId:', userId);
       
-      // Call the Edge Function to delete the user using the supabase client
       const { data: functionData, error: functionError } = await supabase.functions.invoke('delete-user', {
         body: { userId }
       });
@@ -84,6 +86,40 @@ export const UserList = () => {
       toast.error('Failed to delete user');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const startEditing = (user: { id: string; name: string }) => {
+    setEditingUserId(user.id);
+    setEditingName(user.name);
+  };
+
+  const cancelEditing = () => {
+    setEditingUserId(null);
+    setEditingName("");
+  };
+
+  const handleUpdateName = async (userId: string) => {
+    try {
+      console.log('Updating name for user:', userId);
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ name: editingName })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error updating user name:', error);
+        toast.error('Failed to update user name');
+        return;
+      }
+
+      toast.success('User name updated successfully');
+      refetch();
+      cancelEditing();
+    } catch (error) {
+      console.error('Error in handleUpdateName:', error);
+      toast.error('Failed to update user name');
     }
   };
 
@@ -137,7 +173,40 @@ export const UserList = () => {
                     {user.role === 'admin' && (
                       <Shield className="h-4 w-4 text-blue-500" />
                     )}
-                    {user.name || 'Unnamed User'}
+                    {editingUserId === user.id ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          className="max-w-[200px]"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleUpdateName(user.id)}
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={cancelEditing}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span>{user.name || 'Unnamed User'}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => startEditing(user)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell>{user.email || 'No email'}</TableCell>
                   <TableCell>
