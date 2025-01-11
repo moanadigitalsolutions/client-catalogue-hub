@@ -58,13 +58,27 @@ export const ReportContent = ({
 
   const handleApplyFilter = () => {
     console.log('Applying date filter:', filterDateRange);
-    // Update the filtered data with the date range
-    setFilteredData(prevData => {
-      if (!filterDateRange) {
-        return previewData;
-      }
-      return [...previewData]; // Create a new array to trigger re-render
+    if (!filterDateRange) {
+      setFilteredData(previewData);
+      return;
+    }
+
+    const filtered = previewData.filter(row => {
+      // If there's no created_at, we'll include the row
+      if (!row.created_at) return true;
+
+      const rowDate = new Date(row.created_at);
+      const fromDate = filterDateRange.from;
+      const toDate = filterDateRange.to;
+
+      if (!fromDate) return true;
+      if (!toDate) return rowDate >= fromDate;
+      
+      return rowDate >= fromDate && rowDate <= toDate;
     });
+
+    console.log('Filtered data:', filtered);
+    setFilteredData(filtered);
   };
 
   const loadTemplates = async () => {
