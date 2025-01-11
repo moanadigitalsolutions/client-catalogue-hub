@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { supabase } from "@/lib/supabase";
+import { format } from 'date-fns';
 
 declare module 'jspdf' {
   interface jsPDF {
@@ -19,8 +20,43 @@ interface ClientData {
   dob?: string;
 }
 
+const formatValue = (value: any, fieldId: string) => {
+  if (value === null || value === undefined) return '';
+
+  // Handle date fields
+  if (fieldId === 'birth_date' || fieldId === 'dob') {
+    try {
+      return format(new Date(value), 'dd/MM/yyyy');
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return value;
+    }
+  }
+
+  // Handle boolean fields
+  if (typeof value === 'boolean') {
+    return value ? 'Yes' : 'No';
+  }
+
+  // Handle array fields
+  if (Array.isArray(value)) {
+    return value.join(', ');
+  }
+
+  return String(value);
+};
+
 const generateExcel = (data: ClientData[], fields: string[]) => {
-  const worksheet = XLSX.utils.json_to_sheet(data);
+  // Format data for Excel
+  const formattedData = data.map(row => {
+    const newRow: { [key: string]: string } = {};
+    fields.forEach(field => {
+      newRow[field] = formatValue(row[field], field);
+    });
+    return newRow;
+  });
+
+  const worksheet = XLSX.utils.json_to_sheet(formattedData);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Report");
   
@@ -35,10 +71,12 @@ const generatePDF = (data: ClientData[], fields: string[]) => {
   doc.setFontSize(16);
   doc.text("Client Report", 14, 15);
   doc.setFontSize(10);
-  doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 25);
+  doc.text(`Generated on: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 25);
 
   const displayFields = fields.map(field => field === 'birth_date' ? 'dob' : field);
-  const tableData = data.map(row => displayFields.map(field => row[field]));
+  const tableData = data.map(row => 
+    displayFields.map(field => formatValue(row[field], field))
+  );
   
   doc.autoTable({
     head: [fields],
