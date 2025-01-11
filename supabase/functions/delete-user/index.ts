@@ -31,7 +31,23 @@ Deno.serve(async (req) => {
       throw new Error('userId is required')
     }
 
-    // First delete from user_roles to avoid foreign key constraints
+    // First check if user exists
+    const { data: user, error: userError } = await supabaseClient.auth.admin.getUserById(userId)
+    
+    if (userError || !user) {
+      console.error('Error finding user:', userError)
+      return new Response(
+        JSON.stringify({ error: 'User not found' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 404,
+        }
+      )
+    }
+
+    console.log('User found, proceeding with deletion')
+
+    // Delete from user_roles first to avoid foreign key constraints
     const { error: rolesError } = await supabaseClient
       .from('user_roles')
       .delete()
@@ -41,6 +57,8 @@ Deno.serve(async (req) => {
       console.error('Error deleting user roles:', rolesError)
       throw rolesError
     }
+
+    console.log('User roles deleted successfully')
 
     // Then delete from profiles
     const { error: profileError } = await supabaseClient
@@ -52,6 +70,8 @@ Deno.serve(async (req) => {
       console.error('Error deleting profile:', profileError)
       throw profileError
     }
+
+    console.log('Profile deleted successfully')
 
     // Finally delete the auth user
     const { error: deleteError } = await supabaseClient.auth.admin.deleteUser(userId)
