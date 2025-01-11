@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { UserActions } from "./UserActions";
 import { UserNameEditor } from "./UserNameEditor";
 import { UserRoleCell } from "./UserRoleCell";
+import { UserRole } from "@/types"; // Added this import
 
 export const UserList = () => {
   const [loading, setLoading] = useState(false);
