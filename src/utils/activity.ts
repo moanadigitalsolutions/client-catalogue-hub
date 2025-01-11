@@ -9,7 +9,10 @@ export const trackActivity = async (activityType: string) => {
     const { error } = await supabase
       .from('user_activities')
       .insert([
-        { user_id: user.id, activity_type: activityType }
+        { 
+          user_id: user.id, 
+          activity_type: activityType,
+        }
       ]);
       
     if (error) {

@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { trackActivity } from "@/utils/activity";
 
 interface ClientFormData {
   [key: string]: any;
@@ -38,6 +39,9 @@ export const useClientMutations = (id?: string) => {
           description: 'Client information updated',
           user_id: user.id
         });
+
+        // Track user activity
+        await trackActivity('Updated client information');
       } else {
         const { data: newClient, error } = await supabase
           .from('clients')
@@ -52,11 +56,15 @@ export const useClientMutations = (id?: string) => {
           description: 'Client profile created',
           user_id: user.id
         });
+
+        // Track user activity
+        await trackActivity('Created new client');
       }
     },
     onSuccess: () => {
       console.log('Client saved successfully');
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+      queryClient.invalidateQueries({ queryKey: ['user-activities'] });
       toast.success(`Client ${isEditing ? 'updated' : 'created'} successfully`);
     },
     onError: (error) => {
