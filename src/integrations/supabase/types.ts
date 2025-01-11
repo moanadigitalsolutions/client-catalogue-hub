@@ -304,6 +304,45 @@ export type Database = {
         }
         Relationships: []
       }
+      form_submissions: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          data: Json
+          form_id: string
+          id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          data: Json
+          form_id: string
+          id?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          data?: Json
+          form_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_submissions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_submissions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "registration_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -330,6 +369,50 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      registration_forms: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          elements: Json
+          id: string
+          is_active: boolean | null
+          public_url_key: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          elements?: Json
+          id?: string
+          is_active?: boolean | null
+          public_url_key?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          elements?: Json
+          id?: string
+          is_active?: boolean | null
+          public_url_key?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registration_forms_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       report_templates: {
         Row: {
@@ -458,6 +541,19 @@ export type Database = {
         | "document_removed"
         | "note_added"
       client_deletion_status: "pending" | "approved" | "rejected"
+      form_element_type:
+        | "text"
+        | "email"
+        | "phone"
+        | "number"
+        | "date"
+        | "select"
+        | "radio"
+        | "checkbox"
+        | "textarea"
+        | "name"
+        | "address"
+        | "file"
       report_format: "pdf" | "excel"
       user_role: "admin" | "employee"
     }

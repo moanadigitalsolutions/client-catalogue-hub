@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Settings as SettingsIcon, UserPlus, FileText, UserCog } from "lucide-react";
+import { LayoutDashboard, Users, Settings as SettingsIcon, UserPlus, FileText, UserCog, FormInput } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -72,6 +72,12 @@ const AppSidebar = () => {
       title: "Reports",
       url: "/reports",
       icon: FileText,
+      showAlways: true,
+    },
+    {
+      title: "Registration",
+      url: "/registration",
+      icon: FormInput,
       showAlways: true,
     },
     {

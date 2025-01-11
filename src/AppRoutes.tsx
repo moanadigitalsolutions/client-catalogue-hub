@@ -9,6 +9,7 @@ import Reports from "./pages/Reports";
 import Users from "./pages/Users";
 import Login from "./pages/Login";
 import Layout from "./components/Layout";
+import Registration from "./pages/Registration";
 
 const AppRoutes = () => {
   return (
@@ -31,6 +32,7 @@ const AppRoutes = () => {
           <Route path="users" element={<Users />} />
           <Route path="reports" element={<Reports />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="registration" element={<Registration />} />
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
