@@ -41,118 +41,89 @@ export const useDashboardMetrics = () => {
         ? ((newClients.length - lastMonthClients.length) / lastMonthClients.length) * 100 
         : 0;
 
-      // Process city data
-      const cityData = totalClients.reduce((acc: any[], client) => {
-        if (client.city) {
-          const existingCity = acc.find(item => item.name === client.city);
-          if (existingCity) {
-            existingCity.value++;
-          } else {
-            acc.push({ name: client.city, value: 1 });
+      // Process data for analytics
+      const processFieldData = (fieldId: string) => {
+        return totalClients.reduce((acc: any[], client: any) => {
+          if (client[fieldId]) {
+            const value = client[fieldId];
+            const existingItem = acc.find(item => item.name === value);
+            if (existingItem) {
+              existingItem.value++;
+            } else {
+              acc.push({ name: value, value: 1 });
+            }
           }
-        }
-        return acc;
-      }, []);
+          return acc;
+        }, []);
+      };
 
-      // Process gender data
-      const genderData = totalClients.reduce((acc: any[], client) => {
-        if (client.gender) {
-          const existingGender = acc.find(item => item.name === client.gender);
-          if (existingGender) {
-            existingGender.value++;
-          } else {
-            acc.push({ name: client.gender, value: 1 });
+      // Process correlation data
+      const processCorrelationData = (field1: string, field2: string) => {
+        return totalClients.reduce((acc: any[], client: any) => {
+          if (client[field1] && client[field2]) {
+            acc.push({
+              name: client[field1],
+              value: client[field2],
+              size: 1
+            });
           }
-        }
-        return acc;
-      }, []);
+          return acc;
+        }, []);
+      };
 
-      // Process qualification data
-      const qualificationData = totalClients.reduce((acc: any[], client) => {
-        if (client.qualification) {
-          const existingQual = acc.find(item => item.name === client.qualification);
-          if (existingQual) {
-            existingQual.value++;
-          } else {
-            acc.push({ name: client.qualification, value: 1 });
+      // Process time-based data
+      const processTimeData = (fieldId: string) => {
+        const timeData = totalClients.reduce((acc: any, client: any) => {
+          if (client[fieldId]) {
+            const date = new Date(client[fieldId]);
+            const key = format(date, 'MMM yyyy');
+            acc[key] = (acc[key] || 0) + 1;
           }
-        }
-        return acc;
-      }, []);
+          return acc;
+        }, {});
 
-      // Calculate age groups if DOB exists
-      const ageGroups = totalClients.reduce((acc: any[], client) => {
-        if (client.dob) {
-          const age = new Date().getFullYear() - new Date(client.dob).getFullYear();
-          const ageGroup = getAgeGroup(age);
-          const existingGroup = acc.find(item => item.name === ageGroup);
-          if (existingGroup) {
-            existingGroup.value++;
-          } else {
-            acc.push({ name: ageGroup, value: 1 });
-          }
-        }
-        return acc;
-      }, []);
+        return Object.entries(timeData).map(([name, value]) => ({
+          name,
+          value
+        }));
+      };
 
-      // Calculate monthly growth trends
-      const monthlyData = Array.from({ length: 12 }, (_, i) => {
-        const date = subMonths(new Date(), i);
-        const monthStart = startOfMonth(date);
-        const monthEnd = startOfMonth(subMonths(date, -1));
-        
-        const monthClients = totalClients.filter(client => {
-          const clientDate = parseISO(client.created_at);
-          return clientDate >= monthStart && clientDate < monthEnd;
+      // Process numeric data ranges
+      const processNumericRanges = (fieldId: string) => {
+        const values = totalClients
+          .map((client: any) => parseFloat(client[fieldId]))
+          .filter((value: number) => !isNaN(value));
+
+        if (values.length === 0) return [];
+
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        const range = max - min;
+        const bucketSize = range / 5;
+
+        const buckets = Array.from({ length: 5 }, (_, i) => ({
+          name: `${(min + (i * bucketSize)).toFixed(1)} - ${(min + ((i + 1) * bucketSize)).toFixed(1)}`,
+          value: 0
+        }));
+
+        values.forEach((value: number) => {
+          const bucketIndex = Math.min(Math.floor((value - min) / bucketSize), 4);
+          buckets[bucketIndex].value++;
         });
 
-        return {
-          month: format(date, 'MMM yyyy'),
-          clients: monthClients.length
-        };
-      }).reverse();
-
-      // Calculate engagement metrics
-      const websitePresence = totalClients.filter(client => client.website).length;
-      const websitePresenceRate = (websitePresence / totalClients.length) * 100;
-
-      // Calculate completeness of client profiles
-      const profileCompleteness = totalClients.map(client => {
-        const fields = Object.entries(client).filter(([key]) => 
-          !['id', 'created_at'].includes(key)
-        );
-        const filledFields = fields.filter(([_, value]) => 
-          value !== null && value !== ''
-        );
-        return (filledFields.length / fields.length) * 100;
-      });
-
-      const averageProfileCompleteness = profileCompleteness.reduce((a, b) => a + b, 0) / profileCompleteness.length;
+        return buckets;
+      };
 
       return {
         totalClients,
         totalClientsCount: totalClients.length,
         newClientsThisMonth: newClients.length,
         monthlyGrowthRate: growthRate,
-        activeClients: totalClients.length,
-        cityData,
-        genderData,
-        qualificationData,
-        ageGroups,
-        monthlyData,
-        websitePresenceRate,
-        averageProfileCompleteness,
-        profileCompleteness
+        processFieldData,
+        processCorrelationData,
+        processTimeData,
+        processNumericRanges,
       };
     },
   });
-};
-
-const getAgeGroup = (age: number): string => {
-  if (age < 18) return "Under 18";
-  if (age < 25) return "18-24";
-  if (age < 35) return "25-34";
-  if (age < 45) return "35-44";
-  if (age < 55) return "45-54";
-  return "55+";
 };
