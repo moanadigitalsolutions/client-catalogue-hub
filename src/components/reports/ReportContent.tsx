@@ -69,6 +69,7 @@ export const ReportContent = ({
           <DataPreview 
             data={previewData}
             displayFields={selectedFields}
+            formulas={formulas}
             isLoading={isExporting}
           />
         </div>

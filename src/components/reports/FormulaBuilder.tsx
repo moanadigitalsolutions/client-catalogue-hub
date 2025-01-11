@@ -2,9 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormField } from "@/types";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
+import { toast } from "sonner";
 
 interface FormulaBuilderProps {
   fields: FormField[];
@@ -22,9 +23,30 @@ export const FormulaBuilder = ({ fields, onAddFormula }: FormulaBuilderProps) =>
   const [formulaName, setFormulaName] = useState("");
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
   const [operation, setOperation] = useState<ReportFormula["operation"]>("sum");
+  const [numericFields, setNumericFields] = useState<FormField[]>([]);
+
+  // Update numeric fields whenever fields prop changes
+  useEffect(() => {
+    const filtered = fields.filter(field => 
+      field.type === "number" || 
+      field.type === "currency" ||
+      ["amount", "quantity", "price", "total", "cost", "value", "number"].some(term => 
+        field.field_id.toLowerCase().includes(term) || 
+        field.label.toLowerCase().includes(term)
+      )
+    );
+    setNumericFields(filtered);
+    console.log('Updated numeric fields:', filtered);
+  }, [fields]);
 
   const handleAddFormula = () => {
     if (!formulaName || selectedFields.length === 0) return;
+
+    // Validate field selection based on operation
+    if ((operation === "multiply" || operation === "divide" || operation === "subtract") && selectedFields.length !== 2) {
+      toast.error(`${operation} operation requires exactly two fields`);
+      return;
+    }
 
     const formula: ReportFormula = {
       name: formulaName,
@@ -34,19 +56,13 @@ export const FormulaBuilder = ({ fields, onAddFormula }: FormulaBuilderProps) =>
     };
 
     onAddFormula(formula);
+    toast.success("Formula added successfully");
+    
+    // Reset form
     setFormulaName("");
     setSelectedFields([]);
     setOperation("sum");
   };
-
-  // Improved numeric field detection
-  const numericFields = fields.filter(field => 
-    field.type === "number" || 
-    ["amount", "quantity", "price", "total", "cost", "value", "number"].some(term => 
-      field.field_id.toLowerCase().includes(term) || 
-      field.label.toLowerCase().includes(term)
-    )
-  );
 
   if (numericFields.length === 0) {
     return (
