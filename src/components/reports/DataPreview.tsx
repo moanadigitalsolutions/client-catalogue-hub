@@ -5,17 +5,17 @@ import { ReportData } from "@/utils/reportGenerator";
 interface DataPreviewProps {
   data: ReportData[];
   displayFields: string[];
-  isLoading?: boolean;
+  isLoading: boolean;
 }
 
 export const DataPreview = ({ data, displayFields, isLoading }: DataPreviewProps) => {
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardContent className="p-0">
         <TableContent 
-          data={data}
+          data={data} 
           columns={displayFields}
-          isLoading={isLoading}
+          isLoading={isLoading} 
         />
       </CardContent>
     </Card>
