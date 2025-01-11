@@ -2,11 +2,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 interface MonthlyGrowthChartProps {
-  data: Array<{ month: string; clients: number }>;
+  data: Array<{ name: string; value: number }>;
   className?: string;
 }
 
 const MonthlyGrowthChart = ({ data, className }: MonthlyGrowthChartProps) => {
+  // Transform data to match the required format
+  const transformedData = data.map(item => ({
+    month: item.name,
+    clients: item.value
+  }));
+
   return (
     <Card className={className}>
       <CardHeader className="pb-2">
@@ -15,7 +21,7 @@ const MonthlyGrowthChart = ({ data, className }: MonthlyGrowthChartProps) => {
       <CardContent className="pt-0">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart
-            data={data}
+            data={transformedData}
             margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />

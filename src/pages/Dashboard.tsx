@@ -13,9 +13,9 @@ import { Progress } from "@/components/ui/progress";
 interface CustomGraph {
   field: string;
   secondaryField?: string;
-  type: string;
+  type: "bar" | "pie" | "line";
   title: string;
-  analysisType: string;
+  analysisType: "distribution" | "trend" | "correlation";
 }
 
 const Dashboard = () => {
@@ -46,6 +46,8 @@ const Dashboard = () => {
 
   // Calculate profile completeness
   const calculateProfileCompleteness = () => {
+    if (!metrics.totalClients.length) return 0;
+    
     const totalFields = Object.keys(metrics.totalClients[0] || {}).length;
     const completeness = metrics.totalClients.reduce((sum, client) => {
       const filledFields = Object.values(client).filter(value => value !== null && value !== undefined && value !== '').length;

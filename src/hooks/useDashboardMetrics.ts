@@ -43,6 +43,7 @@ export const useDashboardMetrics = () => {
 
       // Process data for analytics
       const processFieldData = (fieldId: string) => {
+        if (!Array.isArray(totalClients)) return [];
         return totalClients.reduce((acc: any[], client: any) => {
           if (client[fieldId]) {
             const value = client[fieldId];
@@ -59,6 +60,7 @@ export const useDashboardMetrics = () => {
 
       // Process correlation data
       const processCorrelationData = (field1: string, field2: string) => {
+        if (!Array.isArray(totalClients)) return [];
         return totalClients.reduce((acc: any[], client: any) => {
           if (client[field1] && client[field2]) {
             acc.push({
@@ -73,6 +75,7 @@ export const useDashboardMetrics = () => {
 
       // Process time-based data
       const processTimeData = (fieldId: string) => {
+        if (!Array.isArray(totalClients)) return [];
         const timeData = totalClients.reduce((acc: any, client: any) => {
           if (client[fieldId]) {
             const date = new Date(client[fieldId]);
@@ -90,8 +93,23 @@ export const useDashboardMetrics = () => {
 
       // Process numeric data ranges
       const processNumericRanges = (fieldId: string) => {
+        if (!Array.isArray(totalClients)) return [];
+        
         const values = totalClients
-          .map((client: any) => parseFloat(client[fieldId]))
+          .map((client: any) => {
+            if (fieldId === 'dob' && client[fieldId]) {
+              // Calculate age for DOB field
+              const birthDate = new Date(client[fieldId]);
+              const today = new Date();
+              let age = today.getFullYear() - birthDate.getFullYear();
+              const m = today.getMonth() - birthDate.getMonth();
+              if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+              }
+              return age;
+            }
+            return parseFloat(client[fieldId]);
+          })
           .filter((value: number) => !isNaN(value));
 
         if (values.length === 0) return [];
