@@ -99,6 +99,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         toast.error("Invalid email or password");
       }
+      throw error; // Re-throw to handle in the Login component
     } finally {
       setLoading(false);
     }

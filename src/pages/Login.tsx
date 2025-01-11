@@ -15,15 +15,19 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!email || !password) {
+      toast.error("Please enter both email and password");
+      return;
+    }
+
     try {
       console.log("Login component: Attempting login with email:", email);
       await signIn(email, password);
-      toast.success("Logged in successfully");
     } catch (error) {
       console.error("Login component: Login error:", error);
       const errorMessage = error instanceof AuthError 
         ? error.message 
-        : "Failed to login. Please try again.";
+        : "Failed to login. Please check your credentials and try again.";
       toast.error(errorMessage);
     }
   };
@@ -46,6 +50,7 @@ const Login = () => {
                 required
                 placeholder="Enter your email"
                 disabled={loading}
+                className="w-full"
               />
             </div>
             <div className="space-y-2">
@@ -58,6 +63,7 @@ const Login = () => {
                 required
                 placeholder="Enter your password"
                 disabled={loading}
+                className="w-full"
               />
             </div>
             <Button 
