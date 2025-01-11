@@ -51,6 +51,22 @@ export const AddUserForm = ({ onUserAdded, loading }: AddUserFormProps) => {
       setIsSubmitting(true);
       console.log("Creating new user:", { ...values, password: "[REDACTED]" });
 
+      // First check if user exists
+      const { data: existingUser } = await supabase
+        .from('profiles')
+        .select('id, is_active')
+        .eq('email', values.email)
+        .maybeSingle();
+
+      if (existingUser) {
+        if (!existingUser.is_active) {
+          toast.error("This user has been deactivated. Please reactivate their account instead of creating a new one.");
+        } else {
+          toast.error("A user with this email already exists.");
+        }
+        return;
+      }
+
       // Create the user
       const { data: userData, error: signUpError } = await supabase.auth.signUp({
         email: values.email,
@@ -64,7 +80,11 @@ export const AddUserForm = ({ onUserAdded, loading }: AddUserFormProps) => {
 
       if (signUpError) {
         console.error("Error creating user:", signUpError);
-        toast.error(signUpError.message);
+        if (signUpError.message === "User already registered") {
+          toast.error("A user with this email already exists.");
+        } else {
+          toast.error(signUpError.message);
+        }
         return;
       }
 
@@ -80,6 +100,7 @@ export const AddUserForm = ({ onUserAdded, loading }: AddUserFormProps) => {
           id: userData.user.id,
           name: values.name,
           email: values.email,
+          is_active: true
         });
 
       if (profileError) {
