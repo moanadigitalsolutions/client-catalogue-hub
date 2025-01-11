@@ -63,33 +63,9 @@ export const UserList = () => {
         return;
       }
 
-      // First delete from user_roles
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userId);
-
-      if (roleError) {
-        console.error('Error deleting user role:', roleError);
-        toast.error('Failed to delete user');
-        return;
-      }
-
-      // Then delete from profiles
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId);
-
-      if (profileError) {
-        console.error('Error deleting profile:', profileError);
-        toast.error('Failed to delete user');
-        return;
-      }
-
       console.log('Calling delete-user function for userId:', userId);
       
-      // Call the Edge Function to delete the auth user using the supabase client
+      // Call the Edge Function to delete the user using the supabase client
       const { data: functionData, error: functionError } = await supabase.functions.invoke('delete-user', {
         body: { userId }
       });
