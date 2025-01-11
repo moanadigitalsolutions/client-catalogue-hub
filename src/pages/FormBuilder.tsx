@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { FormField } from "@/types";
 import { FormFieldList } from "@/components/settings/FormFieldList";
 import { NewFieldForm } from "@/components/settings/NewFieldForm";
+import { FormPreview } from "@/components/settings/FormPreview";
+import { Eye, Save } from "lucide-react";
 
 const FormBuilder = () => {
   const { id } = useParams();
@@ -18,6 +20,7 @@ const FormBuilder = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [fields, setFields] = useState<FormField[]>([]);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   // Fetch existing form if editing
   const { data: form, isLoading: isLoadingForm } = useQuery({
@@ -91,11 +94,40 @@ const FormBuilder = () => {
     return <div>Loading form...</div>;
   }
 
+  if (isPreviewMode) {
+    return (
+      <FormPreview
+        title={title}
+        description={description}
+        fields={fields}
+        onClose={() => setIsPreviewMode(false)}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">{id ? 'Edit Form' : 'Create New Form'}</h2>
-        <Button onClick={() => navigate('/registration')}>Back to Forms</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate('/registration')}>
+            Cancel
+          </Button>
+          <Button 
+            variant="outline"
+            onClick={() => setIsPreviewMode(true)}
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Preview
+          </Button>
+          <Button
+            onClick={() => saveMutation.mutate()}
+            disabled={!title || saveMutation.isPending}
+          >
+            <Save className="h-4 w-4 mr-2" />
+            {saveMutation.isPending ? 'Saving...' : 'Save Form'}
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -127,21 +159,6 @@ const FormBuilder = () => {
               onFieldAdded={(field) => setFields([...fields, field])}
               existingFields={fields}
             />
-          </div>
-
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              variant="outline"
-              onClick={() => navigate('/registration')}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => saveMutation.mutate()}
-              disabled={!title || saveMutation.isPending}
-            >
-              {saveMutation.isPending ? 'Saving...' : 'Save Form'}
-            </Button>
           </div>
         </CardContent>
       </Card>
