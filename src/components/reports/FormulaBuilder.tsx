@@ -27,16 +27,41 @@ export const FormulaBuilder = ({ fields, onAddFormula }: FormulaBuilderProps) =>
 
   // Update numeric fields whenever fields prop changes
   useEffect(() => {
-    const filtered = fields.filter(field => 
-      field.type === "number" || 
-      field.type === "currency" ||
-      ["amount", "quantity", "price", "total", "cost", "value", "number"].some(term => 
+    console.log('Fields received in FormulaBuilder:', fields);
+    const filtered = fields.filter(field => {
+      // Check if the field is explicitly a number or currency type
+      const isNumericType = field.type === "number" || field.type === "currency";
+      
+      // Check if the field_id or label contains numeric-related terms
+      const numericTerms = [
+        "amount",
+        "quantity",
+        "price",
+        "total",
+        "cost",
+        "value",
+        "number",
+        "income",
+        "salary",
+        "revenue",
+        "expense",
+        "balance",
+        "payment"
+      ];
+      
+      const containsNumericTerm = numericTerms.some(term => 
         field.field_id.toLowerCase().includes(term) || 
         field.label.toLowerCase().includes(term)
-      )
-    );
+      );
+
+      // Also check if the field has a $ symbol in its label
+      const hasCurrencySymbol = field.label.includes('$');
+
+      return isNumericType || containsNumericTerm || hasCurrencySymbol;
+    });
+
+    console.log('Filtered numeric fields:', filtered);
     setNumericFields(filtered);
-    console.log('Updated numeric fields:', filtered);
   }, [fields]);
 
   const handleAddFormula = () => {
