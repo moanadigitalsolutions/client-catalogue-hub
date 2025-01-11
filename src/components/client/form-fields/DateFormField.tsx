@@ -7,16 +7,9 @@ import {
 } from "@/components/ui/form";
 import { FormField as FormFieldType } from "@/types";
 import { UseFormReturn } from "react-hook-form";
-import { format } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { format, parse, isValid } from "date-fns";
+import { Input } from "@/components/ui/input";
+import { useState } from "react";
 
 interface DateFormFieldProps {
   field: FormFieldType;
@@ -25,6 +18,23 @@ interface DateFormFieldProps {
 
 export const DateFormField = ({ field, form }: DateFormFieldProps) => {
   console.log('Rendering date form field:', field);
+  const [inputValue, setInputValue] = useState("");
+
+  const handleDateChange = (value: string) => {
+    setInputValue(value);
+    
+    // Only attempt to parse if we have a complete date string
+    if (value.length === 10) {
+      try {
+        const parsedDate = parse(value, 'dd/MM/yyyy', new Date());
+        if (isValid(parsedDate)) {
+          form.setValue(field.field_id, parsedDate);
+        }
+      } catch (error) {
+        console.error('Error parsing date:', error);
+      }
+    }
+  };
 
   return (
     <FormField
@@ -33,37 +43,25 @@ export const DateFormField = ({ field, form }: DateFormFieldProps) => {
       render={({ field: formField }) => (
         <FormItem className="flex flex-col">
           <FormLabel>{field.label}</FormLabel>
-          <Popover>
-            <PopoverTrigger asChild>
-              <FormControl>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-full pl-3 text-left font-normal",
-                    !formField.value && "text-muted-foreground"
-                  )}
-                >
-                  {formField.value ? (
-                    format(new Date(formField.value), "PPP")
-                  ) : (
-                    <span>Pick a date</span>
-                  )}
-                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                </Button>
-              </FormControl>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={formField.value ? new Date(formField.value) : undefined}
-                onSelect={formField.onChange}
-                disabled={(date) =>
-                  date > new Date() || date < new Date("1900-01-01")
+          <FormControl>
+            <Input
+              placeholder="DD/MM/YYYY"
+              value={inputValue || (formField.value ? format(new Date(formField.value), 'dd/MM/yyyy') : '')}
+              onChange={(e) => {
+                const value = e.target.value;
+                // Add slashes automatically
+                let formattedValue = value.replace(/[^0-9]/g, '');
+                if (formattedValue.length > 0) {
+                  formattedValue = formattedValue.match(/.{1,2}/g)?.join('/') || '';
+                  if (formattedValue.length > 10) {
+                    formattedValue = formattedValue.slice(0, 10);
+                  }
                 }
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+                handleDateChange(formattedValue);
+              }}
+              onBlur={formField.onBlur}
+            />
+          </FormControl>
           <FormMessage />
         </FormItem>
       )}
