@@ -6,14 +6,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthError } from "@supabase/supabase-js";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const { signIn, loading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     
     if (!email || !password) {
       toast.error("Please enter both email and password");
@@ -25,10 +28,15 @@ const Login = () => {
       await signIn(email, password);
     } catch (error) {
       console.error("Login component: Login error:", error);
-      const errorMessage = error instanceof AuthError 
-        ? error.message 
-        : "Failed to login. Please check your credentials and try again.";
-      toast.error(errorMessage);
+      if (error instanceof AuthError) {
+        if (error.message.includes("Invalid login credentials")) {
+          setError("Invalid email or password. Please check your credentials and try again.");
+        } else {
+          setError(error.message);
+        }
+      } else {
+        setError("Failed to login. Please check your credentials and try again.");
+      }
     }
   };
 
@@ -39,6 +47,11 @@ const Login = () => {
           <CardTitle className="text-2xl text-center">Login</CardTitle>
         </CardHeader>
         <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>

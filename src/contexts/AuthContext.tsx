@@ -89,17 +89,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const from = location.state?.from?.pathname || '/dashboard';
         console.log("AuthContext: Redirecting to:", from);
         navigate(from, { replace: true });
-        toast.success("Logged in successfully");
       }
       
     } catch (error) {
       console.error("AuthContext: Sign in error:", error);
       if (error instanceof AuthError) {
-        toast.error(error.message);
-      } else {
-        toast.error("Invalid email or password");
+        if (error.message.includes("Invalid login credentials")) {
+          throw new AuthError("Invalid email or password. Please check your credentials and try again.");
+        }
+        throw error;
       }
-      throw error; // Re-throw to handle in the Login component
+      throw new AuthError("An unexpected error occurred during sign in.");
     } finally {
       setLoading(false);
     }
