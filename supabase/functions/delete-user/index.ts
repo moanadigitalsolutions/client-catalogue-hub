@@ -45,7 +45,20 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log('User found, proceeding with deactivation')
+    console.log('User found, handling document references')
+
+    // First, update any documents uploaded by this user to set uploaded_by to null
+    const { error: documentsError } = await supabaseClient
+      .from('client_documents')
+      .update({ uploaded_by: null })
+      .eq('uploaded_by', userId)
+
+    if (documentsError) {
+      console.error('Error updating documents:', documentsError)
+      throw documentsError
+    }
+
+    console.log('Documents updated, proceeding with profile deactivation')
 
     // Update profile to mark as deactivated
     const { error: profileError } = await supabaseClient
