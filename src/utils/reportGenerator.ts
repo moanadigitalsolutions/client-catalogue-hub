@@ -2,7 +2,8 @@ import { format } from "date-fns";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
+import { DateRange } from "react-day-picker";
 
 export interface ReportData {
   [key: string]: string | number | boolean | null;
@@ -10,10 +11,7 @@ export interface ReportData {
 
 export interface ReportOptions {
   fields: string[];
-  dateRange?: {
-    from: Date;
-    to: Date;
-  };
+  dateRange?: DateRange;
 }
 
 export const formatValue = (value: any, fieldType: string) => {
@@ -127,8 +125,9 @@ export const generateReport = async (format: "pdf" | "excel", options: ReportOpt
 };
 
 // Fetch real data from Supabase
-const fetchReportData = async (fields: string[], dateRange?: { from: Date; to: Date }): Promise<ReportData[]> => {
+const fetchReportData = async (fields: string[], dateRange?: DateRange): Promise<ReportData[]> => {
   console.log('Fetching report data for fields:', fields);
+  console.log('Date range:', dateRange);
   
   try {
     // Map birth_date to dob if it exists in the fields array
@@ -139,9 +138,11 @@ const fetchReportData = async (fields: string[], dateRange?: { from: Date; to: D
       .select(mappedFields.join(','));
 
     // Add date range filter if provided
-    if (dateRange) {
-      query = query.gte('created_at', dateRange.from.toISOString())
-                  .lte('created_at', dateRange.to.toISOString());
+    if (dateRange?.from) {
+      query = query.gte('created_at', dateRange.from.toISOString());
+      if (dateRange.to) {
+        query = query.lte('created_at', dateRange.to.toISOString());
+      }
     }
 
     const { data, error } = await query;
@@ -170,7 +171,8 @@ const fetchReportData = async (fields: string[], dateRange?: { from: Date; to: D
 };
 
 // Generate preview data from real database
-export const generatePreviewData = async (fields: string[]): Promise<ReportData[]> => {
+export const generatePreviewData = async (fields: string[], dateRange?: DateRange): Promise<ReportData[]> => {
   console.log('Generating preview data for fields:', fields);
-  return await fetchReportData(fields);
+  console.log('With date range:', dateRange);
+  return await fetchReportData(fields, dateRange);
 };

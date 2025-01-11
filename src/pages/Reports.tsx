@@ -17,7 +17,7 @@ const Reports = () => {
   const [previewData, setPreviewData] = useState<ReportData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch preview data when selected fields change
+  // Fetch preview data when selected fields or date range change
   useEffect(() => {
     const fetchPreviewData = async () => {
       if (selectedFields.length === 0) {
@@ -27,7 +27,7 @@ const Reports = () => {
 
       setIsLoading(true);
       try {
-        const data = await generatePreviewData(selectedFields);
+        const data = await generatePreviewData(selectedFields, dateRange);
         setPreviewData(data);
       } catch (error) {
         console.error("Error fetching preview data:", error);
