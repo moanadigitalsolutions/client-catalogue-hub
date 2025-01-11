@@ -12,6 +12,29 @@ const UserActivities = () => {
   const { user } = useAuth();
   const [isExpanded, setIsExpanded] = useState(false);
   
+  // First, check if user is admin
+  const { data: userRole } = useQuery({
+    queryKey: ['userRole', user?.id],
+    queryFn: async () => {
+      console.log('Checking user role for activities view');
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user?.id)
+        .maybeSingle();
+        
+      if (error) {
+        console.error('Error fetching user role:', error);
+        throw error;
+      }
+      
+      console.log('User role:', data?.role);
+      return data?.role || null;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Only fetch activities if user is admin
   const { data: activities, isLoading } = useQuery({
     queryKey: ['user-activities'],
     queryFn: async () => {
@@ -32,9 +55,15 @@ const UserActivities = () => {
       }
 
       console.log('Fetched activities:', data);
-      return data || []; // Ensure we always return an array
+      return data || [];
     },
+    enabled: userRole === 'admin', // Only fetch if user is admin
   });
+
+  // If user is not admin, don't render anything
+  if (userRole !== 'admin') {
+    return null;
+  }
 
   if (isLoading) {
     return (
