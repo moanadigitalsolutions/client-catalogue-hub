@@ -33,11 +33,12 @@ export const useClientMutations = (id?: string) => {
           .eq('id', id);
         if (error) throw error;
 
+        // Track client update activity
         await supabase.from('client_activities').insert({
           client_id: id,
+          user_id: user.id,
           activity_type: 'updated',
-          description: 'Client information updated',
-          user_id: user.id
+          description: 'Client information updated'
         });
 
         // Track user activity
@@ -50,11 +51,12 @@ export const useClientMutations = (id?: string) => {
           .single();
         if (error) throw error;
 
+        // Track client creation activity
         await supabase.from('client_activities').insert({
           client_id: newClient.id,
+          user_id: user.id,
           activity_type: 'created',
-          description: 'Client profile created',
-          user_id: user.id
+          description: 'Client profile created'
         });
 
         // Track user activity
@@ -64,6 +66,7 @@ export const useClientMutations = (id?: string) => {
     onSuccess: () => {
       console.log('Client saved successfully');
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+      queryClient.invalidateQueries({ queryKey: ['client-activities'] });
       queryClient.invalidateQueries({ queryKey: ['user-activities'] });
       toast.success(`Client ${isEditing ? 'updated' : 'created'} successfully`);
     },
