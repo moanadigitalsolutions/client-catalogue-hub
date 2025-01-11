@@ -107,16 +107,17 @@ export const UserList = () => {
         return;
       }
 
-      // Optimistically update the local cache
-      queryClient.setQueryData(['users'], (oldData: any) => {
-        if (!oldData) return oldData;
-        return oldData.map((user: any) => 
+      // Update the cache immediately with the new name
+      const oldData = queryClient.getQueryData(['users']) as any[];
+      if (oldData) {
+        const newData = oldData.map(user => 
           user.id === userId ? { ...user, name: editingName } : user
         );
-      });
+        queryClient.setQueryData(['users'], newData);
+      }
 
-      // Then invalidate to ensure we're in sync with the server
-      await queryClient.invalidateQueries({ queryKey: ['users'] });
+      // Force a refetch to ensure we're in sync with the server
+      queryClient.invalidateQueries({ queryKey: ['users'] });
       
       toast.success('User name updated successfully');
       cancelEditing();
