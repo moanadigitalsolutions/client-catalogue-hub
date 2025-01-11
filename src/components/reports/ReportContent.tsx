@@ -43,6 +43,7 @@ export const ReportContent = ({
 }: ReportContentProps) => {
   const [formulas, setFormulas] = useState<ReportFormula[]>([]);
   const [filterDateRange, setFilterDateRange] = useState<DateRange | undefined>();
+  const [filteredData, setFilteredData] = useState<ReportData[]>(previewData);
   const [templates, setTemplates] = useState<any[]>([]);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
 
@@ -50,8 +51,14 @@ export const ReportContent = ({
     setFormulas(prev => [...prev, formula]);
   };
 
+  // Update filtered data when previewData changes
+  useEffect(() => {
+    setFilteredData(previewData);
+  }, [previewData]);
+
   const handleApplyFilter = () => {
     console.log('Applying date filter:', filterDateRange);
+    setFilteredData(previewData);
   };
 
   const loadTemplates = async () => {
@@ -105,7 +112,6 @@ export const ReportContent = ({
     try {
       setSelectedFormat(template.format);
       setFormulas(template.formulas);
-      // Update selected fields through parent component
       template.fields.forEach((field: string) => {
         if (!selectedFields.includes(field)) {
           onFieldToggle(field);
@@ -158,7 +164,7 @@ export const ReportContent = ({
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Data Preview</h3>
           <DataPreview 
-            data={previewData}
+            data={filteredData}
             displayFields={selectedFields}
             formulas={formulas}
             isLoading={isExporting}
