@@ -12,8 +12,10 @@ import { Progress } from "@/components/ui/progress";
 
 interface CustomGraph {
   field: string;
-  type: "pie" | "bar";
+  secondaryField?: string;
+  type: string;
   title: string;
+  analysisType: string;
 }
 
 const Dashboard = () => {
@@ -30,27 +32,29 @@ const Dashboard = () => {
 
   // Process data for custom graphs
   const getGraphData = (fieldId: string) => {
-    if (!Array.isArray(metrics.totalClients)) {
-      console.error('totalClients is not an array:', metrics.totalClients);
-      return [];
-    }
-
-    return metrics.totalClients.reduce((acc: any[], client: any) => {
-      if (client[fieldId]) {
-        const existingItem = acc.find(item => item.name === client[fieldId]);
-        if (existingItem) {
-          existingItem.value++;
-        } else {
-          acc.push({ name: client[fieldId], value: 1 });
-        }
-      }
-      return acc;
-    }, []);
+    return metrics.processFieldData(fieldId);
   };
 
   const handleAddGraph = (config: CustomGraph) => {
     setCustomGraphs(prev => [...prev, config]);
   };
+
+  // Calculate website presence rate
+  const websitePresenceRate = metrics.totalClients.reduce((count, client) => {
+    return count + (client.website ? 1 : 0);
+  }, 0) / metrics.totalClientsCount * 100;
+
+  // Calculate profile completeness
+  const calculateProfileCompleteness = () => {
+    const totalFields = Object.keys(metrics.totalClients[0] || {}).length;
+    const completeness = metrics.totalClients.reduce((sum, client) => {
+      const filledFields = Object.values(client).filter(value => value !== null && value !== undefined && value !== '').length;
+      return sum + (filledFields / totalFields * 100);
+    }, 0);
+    return completeness / metrics.totalClientsCount;
+  };
+
+  const averageProfileCompleteness = calculateProfileCompleteness();
 
   return (
     <div className="space-y-6">
@@ -79,7 +83,7 @@ const Dashboard = () => {
         />
         <DashboardMetricCard 
           title="Website Presence" 
-          value={metrics.websitePresenceRate}
+          value={websitePresenceRate}
           description="Clients with website (%)" 
         />
       </div>
@@ -94,34 +98,34 @@ const Dashboard = () => {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Average completeness</span>
                 <span className="text-sm font-medium">
-                  {metrics.averageProfileCompleteness.toFixed(1)}%
+                  {averageProfileCompleteness.toFixed(1)}%
                 </span>
               </div>
-              <Progress value={metrics.averageProfileCompleteness} />
+              <Progress value={averageProfileCompleteness} />
             </div>
           </CardContent>
         </Card>
-        <MonthlyGrowthChart data={metrics.monthlyData} />
+        <MonthlyGrowthChart data={metrics.processTimeData('created_at')} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <DemographicsChart 
-          data={metrics.genderData} 
+          data={metrics.processFieldData('gender')} 
           title="Gender Distribution"
           colors={['#0088FE', '#FF8042']}
         />
         <DemographicsChart 
-          data={metrics.qualificationData} 
+          data={metrics.processFieldData('qualification')} 
           title="Qualification Distribution"
         />
         <DemographicsChart 
-          data={metrics.ageGroups} 
+          data={metrics.processNumericRanges('dob')} 
           title="Age Distribution"
         />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <ClientsByCityChart data={metrics.cityData} />
+        <ClientsByCityChart data={metrics.processFieldData('city')} />
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium">Key Insights</CardTitle>
@@ -142,7 +146,7 @@ const Dashboard = () => {
                 <div className="flex-1">
                   <p className="text-sm font-medium">Profile Quality</p>
                   <p className="text-sm text-muted-foreground">
-                    {`${metrics.averageProfileCompleteness.toFixed(1)}% average profile completeness`}
+                    {`${averageProfileCompleteness.toFixed(1)}% average profile completeness`}
                   </p>
                 </div>
               </li>
@@ -150,7 +154,7 @@ const Dashboard = () => {
                 <div className="flex-1">
                   <p className="text-sm font-medium">Online Presence</p>
                   <p className="text-sm text-muted-foreground">
-                    {`${metrics.websitePresenceRate.toFixed(1)}% of clients have websites`}
+                    {`${websitePresenceRate.toFixed(1)}% of clients have websites`}
                   </p>
                 </div>
               </li>
