@@ -54,20 +54,31 @@ Deno.serve(async (req) => {
 
     console.log('User created successfully:', userData.user.id)
 
-    // Assign the role
-    const { error: roleError } = await supabaseClient
+    // Check if role already exists for user
+    const { data: existingRole } = await supabaseClient
       .from('user_roles')
-      .insert({
-        user_id: userData.user.id,
-        role
-      })
+      .select('*')
+      .eq('user_id', userData.user.id)
+      .single()
 
-    if (roleError) {
-      console.error('Error assigning role:', roleError)
-      throw roleError
+    if (!existingRole) {
+      // Only assign role if one doesn't exist
+      const { error: roleError } = await supabaseClient
+        .from('user_roles')
+        .insert({
+          user_id: userData.user.id,
+          role
+        })
+
+      if (roleError) {
+        console.error('Error assigning role:', roleError)
+        throw roleError
+      }
+
+      console.log('Role assigned successfully')
+    } else {
+      console.log('User already has a role assigned')
     }
-
-    console.log('Role assigned successfully')
 
     // Generate password reset link
     const { data: resetData, error: resetError } = await supabaseClient.auth.admin.generateLink({
