@@ -35,6 +35,7 @@ const PublicForm = () => {
         throw error;
       }
 
+      console.log('Form data loaded:', data);
       return data;
     },
   });
@@ -53,7 +54,12 @@ const PublicForm = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error submitting form:', error);
+        throw error;
+      }
+      
+      console.log('Form submission successful:', data);
       return data;
     },
     onSuccess: () => {
@@ -84,7 +90,7 @@ const PublicForm = () => {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-center">
-              <p>Loading form...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
             </div>
           </CardContent>
         </Card>
