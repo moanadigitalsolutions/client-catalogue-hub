@@ -3,23 +3,25 @@ import { TableContent } from "./table/TableContent";
 import { ReportData } from "@/utils/reportGenerator";
 import { ReportFormula } from "./FormulaBuilder";
 import { calculateFormulaResult } from "@/utils/formulaCalculator";
+import { DateRange } from "react-day-picker";
 
 interface DataPreviewProps {
   data: ReportData[];
   displayFields: string[];
   isLoading: boolean;
   formulas?: ReportFormula[];
-  dateRange?: { from: Date; to: Date };
+  dateRange?: DateRange;
 }
 
 export const DataPreview = ({ data, displayFields, isLoading, formulas = [], dateRange }: DataPreviewProps) => {
   console.log('DataPreview received:', { data, displayFields, formulas, isLoading, dateRange });
   
   // Filter data by date range if provided
-  const filteredData = dateRange 
+  const filteredData = dateRange?.from 
     ? data.filter(row => {
         const rowDate = new Date(row.created_at as string);
-        return rowDate >= dateRange.from && rowDate <= dateRange.to;
+        return rowDate >= dateRange.from! && 
+               (!dateRange.to || rowDate <= dateRange.to);
       })
     : data;
 

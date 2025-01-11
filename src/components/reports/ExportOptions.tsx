@@ -16,9 +16,9 @@ interface ExportOptionsProps {
   onExport: (format: "pdf" | "excel") => void;
   onSaveTemplate: () => void;
   disabled: boolean;
-  templates: any[];
-  onLoadTemplate: (template: any) => void;
-  isLoadingTemplates: boolean;
+  templates?: any[];
+  onLoadTemplate?: (template: any) => void;
+  isLoadingTemplates?: boolean;
 }
 
 export const ExportOptions = ({
@@ -27,9 +27,9 @@ export const ExportOptions = ({
   onExport,
   onSaveTemplate,
   disabled,
-  templates,
+  templates = [], // Provide default empty array
   onLoadTemplate,
-  isLoadingTemplates,
+  isLoadingTemplates = false,
 }: ExportOptionsProps) => {
   return (
     <div className="space-y-6">
@@ -63,7 +63,7 @@ export const ExportOptions = ({
         </Button>
       </div>
 
-      {templates.length > 0 && (
+      {templates.length > 0 && onLoadTemplate && (
         <div className="space-y-2">
           <h4 className="text-sm font-medium">Saved Templates</h4>
           <Card className="p-4">
