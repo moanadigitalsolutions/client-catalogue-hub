@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { FormField } from "@/types";
 import { FormFieldList } from "@/components/settings/FormFieldList";
 import { FormPreview } from "@/components/settings/FormPreview";
-import { Eye, Save, Plus } from "lucide-react";
+import { Eye, Save, Plus, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
