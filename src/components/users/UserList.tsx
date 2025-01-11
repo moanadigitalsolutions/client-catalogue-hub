@@ -94,7 +94,7 @@ export const UserList = () => {
 
   const handleUpdateName = async (userId: string) => {
     try {
-      console.log('Updating name for user:', userId, 'New name:', editingName);
+      console.log('Starting name update for user:', userId, 'New name:', editingName);
       
       const { error } = await supabase
         .from('profiles')
@@ -107,7 +107,7 @@ export const UserList = () => {
         return;
       }
 
-      // Update the cache immediately with the new name
+      // Immediately update the local cache with the new name
       const oldData = queryClient.getQueryData(['users']) as any[];
       if (oldData) {
         const newData = oldData.map(user => 
@@ -116,8 +116,8 @@ export const UserList = () => {
         queryClient.setQueryData(['users'], newData);
       }
 
-      // Force a refetch to ensure we're in sync with the server
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      // Force an immediate refetch to ensure we're in sync with the server
+      await queryClient.invalidateQueries({ queryKey: ['users'] });
       
       toast.success('User name updated successfully');
       cancelEditing();
