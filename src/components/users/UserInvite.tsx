@@ -20,6 +20,7 @@ export const UserInvite = () => {
   const handleAddUser = async () => {
     try {
       setLoading(true);
+      console.log("Creating new user with details:", newUser);
 
       if (!newUser.name.trim() || !newUser.email.trim()) {
         toast.error("Please fill in all fields");
@@ -31,55 +32,25 @@ export const UserInvite = () => {
         return;
       }
 
-      // Create user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: newUser.email,
-        password: "tempPassword123!", // You might want to generate this randomly
-        email_confirm: true,
+      // Call the Edge Function to create the user
+      const { data, error: functionError } = await supabase.functions.invoke('create-user', {
+        body: {
+          email: newUser.email,
+          name: newUser.name,
+          role: newUser.role
+        }
       });
 
-      if (authError) {
-        console.error("Error creating user:", authError);
+      if (functionError) {
+        console.error("Error from create-user function:", functionError);
         toast.error("Failed to create user");
         return;
       }
 
-      if (!authData.user) {
-        toast.error("Failed to create user");
-        return;
-      }
-
-      // Create user profile
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .insert({
-          id: authData.user.id,
-          name: newUser.name,
-          email: newUser.email,
-        });
-
-      if (profileError) {
-        console.error("Error creating profile:", profileError);
-        toast.error("Failed to create user profile");
-        return;
-      }
-
-      // Assign user role
-      const { error: roleError } = await supabase
-        .from("user_roles")
-        .insert({
-          user_id: authData.user.id,
-          role: newUser.role,
-        });
-
-      if (roleError) {
-        console.error("Error assigning role:", roleError);
-        toast.error("Failed to assign user role");
-        return;
-      }
+      console.log("User creation response:", data);
 
       setNewUser({ name: "", email: "", role: "employee" });
-      toast.success("User added successfully");
+      toast.success("User added successfully. They will receive an email to set their password.");
 
     } catch (error) {
       console.error("Error in handleAddUser:", error);
