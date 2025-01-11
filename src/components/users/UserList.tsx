@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -17,6 +17,7 @@ export const UserList = () => {
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const { user: currentUser } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data: users, isLoading, error, refetch } = useQuery({
     queryKey: ['users'],
@@ -115,7 +116,7 @@ export const UserList = () => {
       }
 
       toast.success('User name updated successfully');
-      refetch();
+      await queryClient.invalidateQueries({ queryKey: ['users'] });
       cancelEditing();
     } catch (error) {
       console.error('Error in handleUpdateName:', error);
