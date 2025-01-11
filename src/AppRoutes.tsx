@@ -11,12 +11,14 @@ import Login from "./pages/Login";
 import Layout from "./components/Layout";
 import Registration from "./pages/Registration";
 import FormBuilder from "./pages/FormBuilder";
+import PublicForm from "./pages/PublicForm";
 
 const AppRoutes = () => {
   return (
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/forms/:publicUrlKey" element={<PublicForm />} />
         <Route
           path="/"
           element={
