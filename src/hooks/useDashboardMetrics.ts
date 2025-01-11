@@ -30,6 +30,7 @@ export const useDashboardMetrics = () => {
         throw newClientsError;
       }
 
+      // Process city data
       const cityData = totalClients.reduce((acc: any[], client) => {
         if (client.city) {
           const existingCity = acc.find(item => item.name === client.city);
@@ -42,11 +43,46 @@ export const useDashboardMetrics = () => {
         return acc;
       }, []);
 
-      const genderData = totalClients.reduce((acc: { male: number; female: number }, client) => {
-        if (client.gender?.toLowerCase() === 'male') acc.male++;
-        if (client.gender?.toLowerCase() === 'female') acc.female++;
+      // Process gender data
+      const genderData = totalClients.reduce((acc: any[], client) => {
+        if (client.gender) {
+          const existingGender = acc.find(item => item.name === client.gender);
+          if (existingGender) {
+            existingGender.value++;
+          } else {
+            acc.push({ name: client.gender, value: 1 });
+          }
+        }
         return acc;
-      }, { male: 0, female: 0 });
+      }, []);
+
+      // Process qualification data
+      const qualificationData = totalClients.reduce((acc: any[], client) => {
+        if (client.qualification) {
+          const existingQual = acc.find(item => item.name === client.qualification);
+          if (existingQual) {
+            existingQual.value++;
+          } else {
+            acc.push({ name: client.qualification, value: 1 });
+          }
+        }
+        return acc;
+      }, []);
+
+      // Calculate age groups if DOB exists
+      const ageGroups = totalClients.reduce((acc: any[], client) => {
+        if (client.dob) {
+          const age = new Date().getFullYear() - new Date(client.dob).getFullYear();
+          const ageGroup = getAgeGroup(age);
+          const existingGroup = acc.find(item => item.name === ageGroup);
+          if (existingGroup) {
+            existingGroup.value++;
+          } else {
+            acc.push({ name: ageGroup, value: 1 });
+          }
+        }
+        return acc;
+      }, []);
 
       const monthlyData = Array.from({ length: 5 }, (_, i) => {
         const date = new Date();
@@ -71,8 +107,19 @@ export const useDashboardMetrics = () => {
         activeClients: totalClients.length,
         cityData,
         genderData,
+        qualificationData,
+        ageGroups,
         monthlyData
       };
     },
   });
+};
+
+const getAgeGroup = (age: number): string => {
+  if (age < 18) return "Under 18";
+  if (age < 25) return "18-24";
+  if (age < 35) return "25-34";
+  if (age < 45) return "35-44";
+  if (age < 55) return "45-54";
+  return "55+";
 };

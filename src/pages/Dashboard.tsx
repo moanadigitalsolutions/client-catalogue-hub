@@ -2,6 +2,7 @@ import { QuickActions } from "@/components/QuickActions";
 import DashboardMetricCard from "@/components/dashboard/DashboardMetricCard";
 import ClientsByCityChart from "@/components/dashboard/ClientsByCityChart";
 import MonthlyGrowthChart from "@/components/dashboard/MonthlyGrowthChart";
+import DemographicsChart from "@/components/dashboard/DemographicsChart";
 import UserActivities from "@/components/dashboard/UserActivities";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 
@@ -39,6 +40,21 @@ const Dashboard = () => {
       <div className="grid gap-4 md:grid-cols-2">
         <ClientsByCityChart data={metrics.cityData} />
         <MonthlyGrowthChart data={metrics.monthlyData} />
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <DemographicsChart 
+          data={metrics.genderData} 
+          title="Gender Distribution"
+          colors={['#0088FE', '#FF8042']}
+        />
+        <DemographicsChart 
+          data={metrics.qualificationData} 
+          title="Qualification Distribution"
+        />
+        <DemographicsChart 
+          data={metrics.ageGroups} 
+          title="Age Distribution"
+        />
       </div>
       <UserActivities />
     </div>
