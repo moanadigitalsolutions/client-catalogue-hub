@@ -9,6 +9,8 @@ interface DataPreviewProps {
 }
 
 export const DataPreview = ({ data, displayFields, isLoading }: DataPreviewProps) => {
+  console.log('DataPreview received:', { data, displayFields, isLoading });
+  
   return (
     <Card>
       <CardContent className="p-0">

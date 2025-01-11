@@ -1,3 +1,5 @@
+import { format } from "date-fns";
+
 export interface ReportData {
   [key: string]: string | number | boolean;
   dob?: string;
@@ -43,10 +45,39 @@ export const formatValue = (value: any, fieldType: string) => {
 };
 
 export const generateReport = async (format: "pdf" | "excel", options: ReportOptions) => {
+  console.log('Generating report with options:', options);
   // Mock implementation for now
   const mockBlob = new Blob(['Sample report content'], { type: 'text/plain' });
   return {
     blob: mockBlob,
     filename: `report.${format}`
   };
+};
+
+// Add mock data generation for preview
+export const generatePreviewData = (fields: string[]): ReportData[] => {
+  console.log('Generating preview data for fields:', fields);
+  // Generate some sample data for preview
+  return [
+    {
+      name: "John Doe",
+      email: "john@example.com",
+      phone: "+1234567890",
+      dob: "1990-01-01",
+    },
+    {
+      name: "Jane Smith",
+      email: "jane@example.com",
+      phone: "+0987654321",
+      dob: "1985-05-15",
+    }
+  ].map(record => {
+    const filteredRecord: ReportData = {};
+    fields.forEach(field => {
+      if (field in record) {
+        filteredRecord[field] = record[field];
+      }
+    });
+    return filteredRecord;
+  });
 };

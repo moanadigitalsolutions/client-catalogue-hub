@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useFormFields } from "@/hooks/useFormFields";
 import { useToast } from "@/hooks/use-toast";
 import { DateRange } from "react-day-picker";
-import { generateReport, ReportData } from "@/utils/reportGenerator";
+import { generateReport, ReportData, generatePreviewData } from "@/utils/reportGenerator";
 import { ReportHeader } from "@/components/reports/ReportHeader";
 import { ReportContent } from "@/components/reports/ReportContent";
 import { ReportFilters } from "@/components/reports/ReportFilters";
@@ -22,11 +22,21 @@ const Reports = () => {
         ? prev.filter((id) => id !== fieldId)
         : [...prev, fieldId]
     );
+    // Update preview data when fields change
+    const updatedFields = selectedFields.includes(fieldId)
+      ? selectedFields.filter((id) => id !== fieldId)
+      : [...selectedFields, fieldId];
+    
+    const newPreviewData = generatePreviewData(updatedFields);
+    setPreviewData(newPreviewData);
   };
 
   const handleSelectAll = () => {
     const allFieldIds = fields.map((f) => f.field_id);
     setSelectedFields(allFieldIds);
+    // Update preview data with all fields
+    const newPreviewData = generatePreviewData(allFieldIds);
+    setPreviewData(newPreviewData);
   };
 
   const handleExport = async (format: "pdf" | "excel") => {
