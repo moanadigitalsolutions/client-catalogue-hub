@@ -61,7 +61,20 @@ Deno.serve(async (req) => {
 
     console.log('User activities deleted successfully')
 
-    // 2. Delete from user_roles
+    // 2. Delete documents uploaded by the user
+    const { error: documentsError } = await supabaseClient
+      .from('client_documents')
+      .delete()
+      .eq('uploaded_by', userId)
+
+    if (documentsError) {
+      console.error('Error deleting user documents:', documentsError)
+      throw documentsError
+    }
+
+    console.log('User documents deleted successfully')
+
+    // 3. Delete from user_roles
     const { error: rolesError } = await supabaseClient
       .from('user_roles')
       .delete()
@@ -74,7 +87,7 @@ Deno.serve(async (req) => {
 
     console.log('User roles deleted successfully')
 
-    // 3. Delete from profiles
+    // 4. Delete from profiles
     const { error: profileError } = await supabaseClient
       .from('profiles')
       .delete()
@@ -87,7 +100,7 @@ Deno.serve(async (req) => {
 
     console.log('Profile deleted successfully')
 
-    // 4. Finally delete the auth user
+    // 5. Finally delete the auth user
     const { error: deleteError } = await supabaseClient.auth.admin.deleteUser(userId)
 
     if (deleteError) {
