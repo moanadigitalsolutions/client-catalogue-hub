@@ -110,9 +110,11 @@ export const useDashboardMetrics = () => {
               }
               return age;
             }
-            return parseFloat(client[fieldId]);
+            
+            const value = parseFloat(client[fieldId]);
+            return !isNaN(value) ? value : null;
           })
-          .filter((value): value is number => value !== null && !isNaN(value));
+          .filter((value): value is number => value !== null);
 
         if (values.length === 0) return [];
 
@@ -121,15 +123,17 @@ export const useDashboardMetrics = () => {
         const range = max - min;
         const bucketSize = range / 5;
 
-        const buckets = Array.from({ length: 5 }, (_, i) => ({
+        const buckets: Array<{ name: string; value: number }> = Array.from({ length: 5 }, (_, i) => ({
           name: `${(min + (i * bucketSize)).toFixed(1)} - ${(min + ((i + 1) * bucketSize)).toFixed(1)}`,
           value: 0
         }));
 
-        values.forEach((value: number) => {
-          const bucketIndex = Math.min(Math.floor((value - min) / bucketSize), 4);
-          if (buckets[bucketIndex]) {
-            buckets[bucketIndex].value++;
+        values.forEach((value) => {
+          if (typeof value === 'number' && !isNaN(value)) {
+            const bucketIndex = Math.min(Math.floor((value - min) / bucketSize), 4);
+            if (bucketIndex >= 0 && bucketIndex < buckets.length) {
+              buckets[bucketIndex].value++;
+            }
           }
         });
 
