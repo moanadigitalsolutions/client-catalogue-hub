@@ -23,7 +23,14 @@ interface ClientRow {
 }
 
 const calculateFormulaValue = (formula: ReportFormula, row: ClientRow): number => {
-  const fieldValues = formula.fields.map(field => Number(row[field]) || 0);
+  const fieldValues = formula.fields.map(field => {
+    const value = row[field];
+    // Handle currency values stored as strings
+    if (typeof value === 'string' && value.includes('$')) {
+      return parseFloat(value.replace(/[$,]/g, '')) || 0;
+    }
+    return Number(value) || 0;
+  });
   
   switch (formula.operation) {
     case "sum":

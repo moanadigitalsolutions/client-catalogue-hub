@@ -31,13 +31,22 @@ export const TableContent = ({ data, selectedFields }: TableContentProps) => {
       return value.join(', ');
     }
 
-    // Handle numeric fields (including formulas)
+    // Handle numeric fields (including formulas and currency)
     if (fieldId.startsWith('formula_') || typeof value === 'number') {
       const num = Number(value);
-      return !isNaN(num) ? num.toLocaleString(undefined, {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2
-      }) : value;
+      if (isNaN(num)) return value;
+      
+      // Check if it's a currency field by looking up the field configuration
+      const isCurrency = window.formFields?.some(
+        field => field.field_id === fieldId && field.type === 'currency'
+      );
+      
+      return isCurrency 
+        ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num)
+        : num.toLocaleString(undefined, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2
+          });
     }
 
     return String(value);
