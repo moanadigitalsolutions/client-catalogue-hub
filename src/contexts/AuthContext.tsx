@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { User } from '@supabase/supabase-js';
+import { User, AuthError } from '@supabase/supabase-js';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
@@ -20,24 +20,45 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
 
   useEffect(() => {
-    // Check active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session check:', session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    // Check active session and handle initial auth state
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('Initial session check:', session?.user?.id);
+        
+        if (error) {
+          console.error('Session check error:', error);
+          throw error;
+        }
+        
+        setUser(session?.user ?? null);
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        toast.error('Authentication error. Please try logging in again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session?.user?.id);
-      setUser(session?.user ?? null);
       
       if (event === 'SIGNED_IN') {
+        setUser(session?.user ?? null);
         navigate('/dashboard');
+        toast.success('Signed in successfully');
       } else if (event === 'SIGNED_OUT') {
+        setUser(null);
         navigate('/login');
+        toast.success('Signed out successfully');
       } else if (event === 'TOKEN_REFRESHED') {
         console.log('Token refreshed successfully');
+        setUser(session?.user ?? null);
+      } else if (event === 'USER_UPDATED') {
+        setUser(session?.user ?? null);
       }
     });
 
@@ -64,16 +85,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (data.user) {
         console.log("AuthContext: Login successful");
         setUser(data.user);
-        toast.success("Logged in successfully");
         
         const from = location.state?.from?.pathname || '/dashboard';
         console.log("AuthContext: Redirecting to:", from);
         navigate(from, { replace: true });
+        toast.success("Logged in successfully");
       }
       
     } catch (error) {
       console.error("AuthContext: Sign in error:", error);
-      toast.error("Invalid email or password");
+      if (error instanceof AuthError) {
+        toast.error(error.message);
+      } else {
+        toast.error("Invalid email or password");
+      }
     } finally {
       setLoading(false);
     }
@@ -82,7 +107,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     try {
       setLoading(true);
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        throw error;
+      }
+      
       setUser(null);
       navigate('/login');
       toast.success("Logged out successfully");
