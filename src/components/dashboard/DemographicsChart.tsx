@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { PieChart, Pie, Cell } from "recharts";
+import { ChartContainer } from "@/components/ui/chart";
+import { PieChart, Pie, Cell, Tooltip } from "recharts";
 
 interface DemographicsChartProps {
   data: Array<{ name: string; value: number }>;
@@ -10,14 +10,30 @@ interface DemographicsChartProps {
 
 const DEFAULT_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
-const DemographicsChart = ({ data, title, colors = DEFAULT_COLORS }: DemographicsChartProps) => {
+const DemographicsChart = ({ data = [], title, colors = DEFAULT_COLORS }: DemographicsChartProps) => {
+  // Early return if no data or empty array
+  if (!data || data.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex h-[200px] items-center justify-center">
+            <p className="text-sm text-muted-foreground">No data available</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <ChartContainer className="h-[200px]" config={{}}>
+        <ChartContainer className="h-[200px]">
           <PieChart>
             <Pie
               data={data}
@@ -29,12 +45,16 @@ const DemographicsChart = ({ data, title, colors = DEFAULT_COLORS }: Demographic
               dataKey="value"
             >
               {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                <Cell 
+                  key={`cell-${index}`} 
+                  fill={colors[index % colors.length]} 
+                />
               ))}
             </Pie>
-            <ChartTooltip>
-              <ChartTooltipContent />
-            </ChartTooltip>
+            <Tooltip 
+              formatter={(value: number, name: string) => [`${value}`, name]}
+              contentStyle={{ background: 'white', border: '1px solid #ccc' }}
+            />
           </PieChart>
         </ChartContainer>
         <div className="mt-4 flex flex-wrap justify-center gap-4">
