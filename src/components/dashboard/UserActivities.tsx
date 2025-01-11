@@ -28,7 +28,7 @@ const UserActivities = () => {
       }
 
       console.log('Fetched activities:', data);
-      return data;
+      return data || []; // Ensure we always return an array
     },
   });
 
@@ -56,22 +56,23 @@ const UserActivities = () => {
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[200px]">
-          {activities?.map((activity) => (
-            <div key={activity.id} className="flex items-center justify-between py-2 border-b last:border-0">
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">
-                  {activity.profiles?.name || 'Unknown User'}
-                </span>
+          {activities && activities.length > 0 ? (
+            activities.map((activity) => (
+              <div key={activity.id} className="flex items-center justify-between py-2 border-b last:border-0">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">
+                    {activity.profiles?.name || 'Unknown User'}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {activity.activity_type}
+                  </span>
+                </div>
                 <span className="text-sm text-muted-foreground">
-                  {activity.activity_type}
+                  {format(new Date(activity.created_at), 'MMM d, yyyy HH:mm')}
                 </span>
               </div>
-              <span className="text-sm text-muted-foreground">
-                {format(new Date(activity.created_at), 'MMM d, yyyy HH:mm')}
-              </span>
-            </div>
-          ))}
-          {activities?.length === 0 && (
+            ))
+          ) : (
             <div className="text-center text-sm text-muted-foreground py-4">
               No recent activities
             </div>

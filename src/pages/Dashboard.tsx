@@ -26,13 +26,8 @@ const Dashboard = () => {
     return <div>Error loading dashboard data</div>;
   }
 
-  const handleAddGraph = (config: CustomGraph) => {
-    setCustomGraphs(prev => [...prev, config]);
-  };
-
   // Process data for custom graphs
   const getGraphData = (fieldId: string) => {
-    // Ensure metrics.totalClients is an array before using reduce
     if (!Array.isArray(metrics.totalClients)) {
       console.error('totalClients is not an array:', metrics.totalClients);
       return [];
@@ -51,6 +46,10 @@ const Dashboard = () => {
     }, []);
   };
 
+  const handleAddGraph = (config: CustomGraph) => {
+    setCustomGraphs(prev => [...prev, config]);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -63,7 +62,7 @@ const Dashboard = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <DashboardMetricCard 
           title="Total Clients" 
-          value={metrics.totalClients}
+          value={metrics.totalClientsCount}
           description="Total number of clients in the system" 
         />
         <DashboardMetricCard 

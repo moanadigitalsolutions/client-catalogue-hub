@@ -102,7 +102,8 @@ export const useDashboardMetrics = () => {
       }).reverse();
 
       return {
-        totalClients: totalClients.length,
+        totalClients: totalClients,  // Return the full array
+        totalClientsCount: totalClients.length,
         newClientsThisMonth: newClients.length,
         activeClients: totalClients.length,
         cityData,
