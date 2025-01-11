@@ -89,9 +89,9 @@ export const useDashboardMetrics = () => {
           return acc;
         }, {});
 
-        return Object.entries(timeData).map(([name, value]) => ({
+        return Object.entries(timeData).map(([name, value]): DashboardMetric => ({
           name,
-          value
+          value: value
         }));
       };
 
