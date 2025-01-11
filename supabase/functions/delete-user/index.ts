@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
       throw new Error('userId is required')
     }
 
-    // First check if user exists
+    // First check if user exists and is an admin
     const { data: user, error: userError } = await supabaseClient.auth.admin.getUserById(userId)
     
     if (userError || !user) {
@@ -47,18 +47,7 @@ Deno.serve(async (req) => {
 
     console.log('User found, handling dependencies')
 
-    // Update any documents uploaded by this user to set uploaded_by to null
-    const { error: documentsError } = await supabaseClient
-      .from('client_documents')
-      .update({ uploaded_by: null })
-      .eq('uploaded_by', userId)
-
-    if (documentsError) {
-      console.error('Error updating documents:', documentsError)
-      throw documentsError
-    }
-
-    // Update user activities to set user_id to null
+    // Update user_activities to set user_id to null
     const { error: userActivitiesError } = await supabaseClient
       .from('user_activities')
       .update({ user_id: null })
@@ -69,7 +58,7 @@ Deno.serve(async (req) => {
       throw userActivitiesError
     }
 
-    // Update client activities to set user_id to null
+    // Update client_activities to set user_id to null
     const { error: clientActivitiesError } = await supabaseClient
       .from('client_activities')
       .update({ user_id: null })
@@ -78,6 +67,56 @@ Deno.serve(async (req) => {
     if (clientActivitiesError) {
       console.error('Error updating client activities:', clientActivitiesError)
       throw clientActivitiesError
+    }
+
+    // Update client_deletion_requests to set requested_by and reviewed_by to null
+    const { error: clientDeletionRequestsError } = await supabaseClient
+      .from('client_deletion_requests')
+      .update({ 
+        requested_by: null,
+        reviewed_by: null 
+      })
+      .or(`requested_by.eq.${userId},reviewed_by.eq.${userId}`)
+
+    if (clientDeletionRequestsError) {
+      console.error('Error updating client deletion requests:', clientDeletionRequestsError)
+      throw clientDeletionRequestsError
+    }
+
+    // Update document_deletion_requests to set requested_by and reviewed_by to null
+    const { error: docDeletionRequestsError } = await supabaseClient
+      .from('document_deletion_requests')
+      .update({ 
+        requested_by: null,
+        reviewed_by: null 
+      })
+      .or(`requested_by.eq.${userId},reviewed_by.eq.${userId}`)
+
+    if (docDeletionRequestsError) {
+      console.error('Error updating document deletion requests:', docDeletionRequestsError)
+      throw docDeletionRequestsError
+    }
+
+    // Delete user's report templates
+    const { error: reportTemplatesError } = await supabaseClient
+      .from('report_templates')
+      .delete()
+      .eq('user_id', userId)
+
+    if (reportTemplatesError) {
+      console.error('Error deleting report templates:', reportTemplatesError)
+      throw reportTemplatesError
+    }
+
+    // Delete user's role
+    const { error: userRolesError } = await supabaseClient
+      .from('user_roles')
+      .delete()
+      .eq('user_id', userId)
+
+    if (userRolesError) {
+      console.error('Error deleting user roles:', userRolesError)
+      throw userRolesError
     }
 
     console.log('Dependencies handled, proceeding with profile deactivation')
