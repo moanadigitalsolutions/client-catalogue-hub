@@ -325,6 +325,47 @@ export type Database = {
         }
         Relationships: []
       }
+      report_templates: {
+        Row: {
+          created_at: string
+          fields: string[]
+          format: Database["public"]["Enums"]["report_format"]
+          formulas: Json
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          fields: string[]
+          format?: Database["public"]["Enums"]["report_format"]
+          formulas?: Json
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          fields?: string[]
+          format?: Database["public"]["Enums"]["report_format"]
+          formulas?: Json
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_templates_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_activities: {
         Row: {
           activity_type: string
@@ -405,6 +446,7 @@ export type Database = {
         | "document_removed"
         | "note_added"
       client_deletion_status: "pending" | "approved" | "rejected"
+      report_format: "pdf" | "excel"
       user_role: "admin" | "employee"
     }
     CompositeTypes: {
