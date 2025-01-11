@@ -12,6 +12,7 @@ import { TextareaFormField } from "@/components/client/form-fields/TextareaFormF
 import { SelectFormField } from "@/components/client/form-fields/SelectFormField";
 import { RadioFormField } from "@/components/client/form-fields/RadioFormField";
 import { CheckboxFormField } from "@/components/client/form-fields/CheckboxFormField";
+import { DateFormField } from "@/components/client/form-fields/DateFormField";
 
 const PublicForm = () => {
   const { publicUrlKey } = useParams();
@@ -28,11 +29,16 @@ const PublicForm = () => {
         .select('*')
         .eq('public_url_key', publicUrlKey)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching form:', error);
         throw error;
+      }
+
+      if (!data) {
+        console.log('No form found or form inactive');
+        return null;
       }
 
       console.log('Form data loaded:', data);
@@ -123,6 +129,8 @@ const PublicForm = () => {
         return <RadioFormField key={field.field_id} field={field} form={form} />;
       case 'checkbox':
         return <CheckboxFormField key={field.field_id} field={field} form={form} />;
+      case 'date':
+        return <DateFormField key={field.field_id} field={field} form={form} />;
       default:
         return <TextFormField key={field.field_id} field={field} form={form} />;
     }
