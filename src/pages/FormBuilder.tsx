@@ -20,11 +20,13 @@ import {
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useAuth } from "@/contexts/AuthContext";
 
 const FormBuilder = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [fields, setFields] = useState<FormField[]>([]);
@@ -80,10 +82,13 @@ const FormBuilder = () => {
   // Save form mutation
   const saveMutation = useMutation({
     mutationFn: async () => {
+      if (!user) throw new Error("User must be logged in");
+      
       const formData = {
         title,
         description,
         elements: fields,
+        created_by: user.id,
         public_url_key: Math.random().toString(36).substring(2, 15)
       };
 
