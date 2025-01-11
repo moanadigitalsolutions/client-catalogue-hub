@@ -52,7 +52,7 @@ export const AddUserForm = ({ onUserAdded, loading }: AddUserFormProps) => {
       console.log("Creating new user:", { ...values, password: "[REDACTED]" });
 
       // Call the edge function to create/reactivate user
-      const { data, error: functionError } = await supabase.functions.invoke('create-user', {
+      const { data, error } = await supabase.functions.invoke('create-user', {
         body: {
           email: values.email,
           password: values.password,
@@ -61,9 +61,17 @@ export const AddUserForm = ({ onUserAdded, loading }: AddUserFormProps) => {
         }
       });
 
-      if (functionError) {
-        console.error("Error from create-user function:", functionError);
-        toast.error("Failed to create user");
+      if (error) {
+        console.error("Error from create-user function:", error);
+        
+        // Handle specific error cases
+        if (error.message.includes("User already exists and is active")) {
+          toast.error("A user with this email already exists and is active");
+        } else if (error.message.includes("User already registered")) {
+          toast.error("This email is already registered. Please use a different email.");
+        } else {
+          toast.error("Failed to create user. Please try again.");
+        }
         return;
       }
 
@@ -77,7 +85,7 @@ export const AddUserForm = ({ onUserAdded, loading }: AddUserFormProps) => {
       onUserAdded();
     } catch (error) {
       console.error("Error in user creation:", error);
-      toast.error("Failed to create user");
+      toast.error("An unexpected error occurred");
     } finally {
       setIsSubmitting(false);
     }
