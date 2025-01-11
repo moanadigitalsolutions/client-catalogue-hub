@@ -47,8 +47,7 @@ Deno.serve(async (req) => {
 
     console.log('User found, handling dependencies')
 
-    // Instead of updating client_activities, we'll keep the records for audit purposes
-    // Update user_activities to set user_id to null where possible
+    // First, handle user_activities since they can be set to null
     const { error: userActivitiesError } = await supabaseClient
       .from('user_activities')
       .update({ user_id: null })
@@ -59,7 +58,7 @@ Deno.serve(async (req) => {
       throw userActivitiesError
     }
 
-    // Update client_deletion_requests to set requested_by and reviewed_by to null
+    // Update client_deletion_requests
     const { error: clientDeletionRequestsError } = await supabaseClient
       .from('client_deletion_requests')
       .update({ 
@@ -73,7 +72,7 @@ Deno.serve(async (req) => {
       throw clientDeletionRequestsError
     }
 
-    // Update document_deletion_requests to set requested_by and reviewed_by to null
+    // Update document_deletion_requests
     const { error: docDeletionRequestsError } = await supabaseClient
       .from('document_deletion_requests')
       .update({ 
@@ -107,6 +106,17 @@ Deno.serve(async (req) => {
     if (userRolesError) {
       console.error('Error deleting user roles:', userRolesError)
       throw userRolesError
+    }
+
+    // Delete client_activities records for this user
+    const { error: clientActivitiesError } = await supabaseClient
+      .from('client_activities')
+      .delete()
+      .eq('user_id', userId)
+
+    if (clientActivitiesError) {
+      console.error('Error deleting client activities:', clientActivitiesError)
+      throw clientActivitiesError
     }
 
     console.log('Dependencies handled, proceeding with profile deactivation')
