@@ -11,6 +11,7 @@ import { ClientHistory } from "@/components/client/ClientHistory";
 import { trackActivity } from "@/utils/activity";
 import { ClientFormFields } from "@/components/client/ClientFormFields";
 import { useFormFields } from "@/hooks/useFormFields";
+import { Form } from "@/components/ui/form";
 
 const ClientForm = () => {
   const { id } = useParams();
@@ -102,21 +103,23 @@ const ClientForm = () => {
               <CardTitle>Client Information</CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                <ClientFormFields form={form} fields={fields} />
-                <div className="flex justify-end space-x-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => navigate('/clients')}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit">
-                    {id ? 'Update Client' : 'Create Client'}
-                  </Button>
-                </div>
-              </form>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                  <ClientFormFields form={form} fields={fields} />
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => navigate('/clients')}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit">
+                      {id ? 'Update Client' : 'Create Client'}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
             </CardContent>
           </Card>
         </TabsContent>
