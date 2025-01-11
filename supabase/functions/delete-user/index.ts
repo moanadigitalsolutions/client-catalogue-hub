@@ -45,9 +45,9 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log('User found, handling document references')
+    console.log('User found, handling dependencies')
 
-    // First, update any documents uploaded by this user to set uploaded_by to null
+    // Update any documents uploaded by this user to set uploaded_by to null
     const { error: documentsError } = await supabaseClient
       .from('client_documents')
       .update({ uploaded_by: null })
@@ -58,7 +58,18 @@ Deno.serve(async (req) => {
       throw documentsError
     }
 
-    console.log('Documents updated, proceeding with profile deactivation')
+    // Update user activities to set user_id to null
+    const { error: activitiesError } = await supabaseClient
+      .from('user_activities')
+      .update({ user_id: null })
+      .eq('user_id', userId)
+
+    if (activitiesError) {
+      console.error('Error updating activities:', activitiesError)
+      throw activitiesError
+    }
+
+    console.log('Dependencies handled, proceeding with profile deactivation')
 
     // Update profile to mark as deactivated
     const { error: profileError } = await supabaseClient
