@@ -20,15 +20,34 @@ export const DataPreview = ({ data, displayFields, isLoading, formulas = [], dat
   // Filter data by client creation date if date range is provided
   const filteredData = dateRange?.from 
     ? data.filter(row => {
-        const creationDate = parseISO(row.created_at as string);
-        const fromDate = startOfDay(dateRange.from!);
-        const toDate = dateRange.to ? endOfDay(dateRange.to) : undefined;
-        
-        return toDate 
-          ? creationDate >= fromDate && creationDate <= toDate
-          : creationDate >= fromDate;
+        // Skip rows without created_at date
+        if (!row.created_at) {
+          console.log('Skipping row without created_at:', row);
+          return false;
+        }
+
+        try {
+          const creationDate = parseISO(row.created_at as string);
+          const fromDate = startOfDay(dateRange.from!);
+          const toDate = dateRange.to ? endOfDay(dateRange.to) : undefined;
+          
+          const isInRange = toDate 
+            ? creationDate >= fromDate && creationDate <= toDate
+            : creationDate >= fromDate;
+
+          if (!isInRange) {
+            console.log('Row outside date range:', { row, creationDate, fromDate, toDate });
+          }
+          
+          return isInRange;
+        } catch (error) {
+          console.error('Error parsing date for row:', row, error);
+          return false;
+        }
       })
     : data;
+
+  console.log('Filtered data:', filteredData);
 
   // Add formula results to each row
   const enrichedData = filteredData.map(row => {
@@ -38,6 +57,8 @@ export const DataPreview = ({ data, displayFields, isLoading, formulas = [], dat
     });
     return enrichedRow;
   });
+
+  console.log('Enriched data:', enrichedData);
 
   // Add totals row for formulas
   const totalsRow = formulas?.length ? {
@@ -57,7 +78,7 @@ export const DataPreview = ({ data, displayFields, isLoading, formulas = [], dat
     ? [...enrichedData, totalsRow]
     : enrichedData;
 
-  console.log('Filtered and enriched data:', finalData);
+  console.log('Final data to display:', finalData);
 
   return (
     <Card>
