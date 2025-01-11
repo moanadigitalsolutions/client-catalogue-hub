@@ -156,7 +156,7 @@ export const UserList = () => {
 
   const handleUpdateName = async (userId: string) => {
     try {
-      console.log('Updating name for user:', userId);
+      console.log('Updating name for user:', userId, 'New name:', editingName);
       
       const { error } = await supabase
         .from('profiles')
