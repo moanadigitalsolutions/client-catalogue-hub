@@ -58,7 +58,13 @@ export const ReportContent = ({
 
   const handleApplyFilter = () => {
     console.log('Applying date filter:', filterDateRange);
-    setFilteredData(previewData);
+    // Update the filtered data with the date range
+    setFilteredData(prevData => {
+      if (!filterDateRange) {
+        return previewData;
+      }
+      return [...previewData]; // Create a new array to trigger re-render
+    });
   };
 
   const loadTemplates = async () => {
