@@ -90,6 +90,15 @@ export const ReportContent = ({
     }
 
     try {
+      // Get the current user's session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) throw sessionError;
+      if (!session?.user?.id) {
+        toast.error('You must be logged in to save templates');
+        return;
+      }
+
       const { error } = await supabase
         .from('report_templates')
         .insert({
@@ -97,6 +106,7 @@ export const ReportContent = ({
           fields: selectedFields,
           formulas: formulas,
           format: selectedFormat,
+          user_id: session.user.id // Add the user_id here
         });
 
       if (error) throw error;
