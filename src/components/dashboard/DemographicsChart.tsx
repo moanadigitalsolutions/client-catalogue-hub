@@ -27,13 +27,20 @@ const DemographicsChart = ({ data = [], title, colors = DEFAULT_COLORS }: Demogr
     );
   }
 
+  const chartConfig = {
+    theme: {
+      light: '#ffffff',
+      dark: '#1a1a1a'
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <ChartContainer className="h-[200px]">
+        <ChartContainer className="h-[200px]" config={chartConfig}>
           <PieChart>
             <Pie
               data={data}
