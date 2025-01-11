@@ -1,5 +1,6 @@
 import { TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface TableContentProps {
   data: any[];
@@ -30,15 +31,36 @@ export const TableContent = ({ data, selectedFields }: TableContentProps) => {
       return value.join(', ');
     }
 
+    // Handle numeric fields (including formulas)
+    if (fieldId.startsWith('formula_') || typeof value === 'number') {
+      const num = Number(value);
+      return !isNaN(num) ? num.toLocaleString(undefined, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+      }) : value;
+    }
+
     return String(value);
   };
 
   return (
     <TableBody>
       {data.map((row, index) => (
-        <TableRow key={index}>
+        <TableRow 
+          key={index}
+          className={cn(
+            row.isAggregate && "bg-muted font-medium",
+            "hover:bg-muted/50 transition-colors"
+          )}
+        >
           {selectedFields.map((fieldId) => (
-            <TableCell key={fieldId}>
+            <TableCell 
+              key={fieldId}
+              className={cn(
+                fieldId.startsWith('formula_') && "font-medium",
+                row.isAggregate && fieldId.startsWith('formula_') && "text-primary"
+              )}
+            >
               {formatCellValue(row[fieldId], fieldId)}
             </TableCell>
           ))}

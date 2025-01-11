@@ -22,36 +22,37 @@ interface ClientRow {
   dob?: string;
 }
 
-const calculateFormulaValue = (formula: ReportFormula, data: ClientRow[]) => {
-  const values = data.map(row => {
-    const fieldValues = formula.fields.map(field => Number(row[field]) || 0);
-    
-    switch (formula.operation) {
-      case "sum":
-        return fieldValues[0];
-      case "multiply":
-        return fieldValues.reduce((a, b) => a * b, 1);
-      case "divide":
-        return fieldValues[1] !== 0 ? fieldValues[0] / fieldValues[1] : 0;
-      case "subtract":
-        return fieldValues[0] - (fieldValues[1] || 0);
-      default:
-        return 0;
-    }
-  });
-
+const calculateFormulaValue = (formula: ReportFormula, row: ClientRow): number => {
+  const fieldValues = formula.fields.map(field => Number(row[field]) || 0);
+  
   switch (formula.operation) {
     case "sum":
+      return fieldValues[0];
     case "multiply":
+      return fieldValues.reduce((a, b) => a * b, 1);
     case "divide":
+      return fieldValues[1] !== 0 ? fieldValues[0] / fieldValues[1] : 0;
     case "subtract":
-      return values.reduce((a, b) => a + b, 0);
+      return fieldValues[0] - (fieldValues[1] || 0);
+    case "average":
+      return fieldValues[0];
+    case "count":
+      return fieldValues[0] !== 0 ? 1 : 0;
+    default:
+      return 0;
+  }
+};
+
+const calculateAggregateValue = (formula: ReportFormula, data: ClientRow[]): number => {
+  const values = data.map(row => calculateFormulaValue(formula, row));
+  
+  switch (formula.operation) {
     case "average":
       return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
     case "count":
       return values.filter(v => v !== 0).length;
     default:
-      return 0;
+      return values.reduce((a, b) => a + b, 0);
   }
 };
 
@@ -94,12 +95,22 @@ export const DataPreview = ({ selectedFields, fields, dateRange, formulas = [] }
           delete newRow.dob;
         }
 
-        // Add formula results
+        // Calculate individual row formula results
         formulas.forEach(formula => {
-          newRow[`formula_${formula.name}`] = calculateFormulaValue(formula, [newRow]);
+          newRow[`formula_${formula.name}`] = calculateFormulaValue(formula, newRow);
         });
 
         return newRow;
+      });
+
+      // Calculate aggregate formula results
+      formulas.forEach(formula => {
+        const aggregateValue = calculateAggregateValue(formula, processedData);
+        processedData.push({
+          ...Object.fromEntries(selectedFields.map(field => [field, ''])),
+          [`formula_${formula.name}`]: aggregateValue,
+          isAggregate: true,
+        });
       });
 
       return processedData;
