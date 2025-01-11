@@ -20,7 +20,7 @@ export const formatValue = (value: any, fieldType: string) => {
   if (value === null || value === undefined) return '';
 
   // Handle date fields
-  if (fieldType === 'birth_date' || fieldType === 'dob' || fieldType === 'date') {
+  if (fieldType === 'dob' || fieldType === 'date') {
     try {
       return format(new Date(value), 'dd/MM/yyyy');
     } catch (error) {
@@ -131,9 +131,12 @@ const fetchReportData = async (fields: string[], dateRange?: { from: Date; to: D
   console.log('Fetching report data for fields:', fields);
   
   try {
+    // Map birth_date to dob if it exists in the fields array
+    const mappedFields = fields.map(field => field === 'birth_date' ? 'dob' : field);
+    
     let query = supabase
       .from('clients')
-      .select(fields.join(','));
+      .select(mappedFields.join(','));
 
     // Add date range filter if provided
     if (dateRange) {
@@ -148,14 +151,14 @@ const fetchReportData = async (fields: string[], dateRange?: { from: Date; to: D
       return [];
     }
 
-    // Ensure the data matches our ReportData type
     if (!data) return [];
     
-    // Transform the data to ensure it matches ReportData type
+    // Transform the data back to use birth_date instead of dob in the response
     return data.map(row => {
       const typedRow: ReportData = {};
-      fields.forEach(field => {
-        typedRow[field] = row[field] ?? null;
+      fields.forEach((field, index) => {
+        const dbField = mappedFields[index];
+        typedRow[field] = row[dbField] ?? null;
       });
       return typedRow;
     });
