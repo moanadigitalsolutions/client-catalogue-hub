@@ -20,7 +20,7 @@ interface ClientData {
   dob?: string;
 }
 
-const formatValue = (value: any, fieldId: string) => {
+export const formatValue = (value: any, fieldId: string) => {
   if (value === null || value === undefined) return '';
 
   // Handle date fields

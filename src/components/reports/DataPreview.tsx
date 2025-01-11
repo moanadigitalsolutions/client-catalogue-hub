@@ -159,7 +159,7 @@ export const DataPreview = ({ selectedFields, fields, dateRange, formulas = [] }
         {isLoading ? (
           <LoadingState colSpan={displayFields.length} />
         ) : previewData && previewData.length > 0 ? (
-          <TableContent data={previewData} selectedFields={displayFields} />
+          <TableContent data={previewData} columns={displayFields} />
         ) : (
           <NoDataState colSpan={displayFields.length} />
         )}
