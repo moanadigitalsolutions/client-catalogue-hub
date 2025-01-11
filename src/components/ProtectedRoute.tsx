@@ -15,6 +15,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
+  // Allow access to password reset page without authentication
+  if (location.pathname === '/reset-password') {
+    return <>{children}</>;
+  }
+
   if (!user && location.pathname !== "/login") {
     console.log("ProtectedRoute: Redirecting to login");
     return <Navigate to="/login" state={{ from: location }} replace />;
