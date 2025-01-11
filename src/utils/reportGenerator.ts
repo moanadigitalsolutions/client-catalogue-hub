@@ -130,24 +130,30 @@ export const generateReport = async (format: "pdf" | "excel", options: ReportOpt
 const fetchReportData = async (fields: string[], dateRange?: { from: Date; to: Date }): Promise<ReportData[]> => {
   console.log('Fetching report data for fields:', fields);
   
-  let query = supabase
-    .from('clients')
-    .select(fields.join(','));
+  try {
+    let query = supabase
+      .from('clients')
+      .select(fields.join(','));
 
-  // Add date range filter if provided
-  if (dateRange) {
-    query = query.gte('created_at', dateRange.from.toISOString())
-                .lte('created_at', dateRange.to.toISOString());
+    // Add date range filter if provided
+    if (dateRange) {
+      query = query.gte('created_at', dateRange.from.toISOString())
+                  .lte('created_at', dateRange.to.toISOString());
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching report data:', error);
+      throw error;
+    }
+
+    // Ensure we return an array that matches ReportData type
+    return (data || []) as ReportData[];
+  } catch (error) {
+    console.error('Error in fetchReportData:', error);
+    return [];
   }
-
-  const { data, error } = await query;
-
-  if (error) {
-    console.error('Error fetching report data:', error);
-    throw error;
-  }
-
-  return data || [];
 };
 
 // Generate preview data from real database

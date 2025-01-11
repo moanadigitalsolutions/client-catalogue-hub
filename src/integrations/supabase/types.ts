@@ -158,6 +158,7 @@ export type Database = {
           email: string | null
           gender: string | null
           id: string
+          income: number | null
           name: string
           notes: string | null
           phone: string | null
@@ -176,6 +177,7 @@ export type Database = {
           email?: string | null
           gender?: string | null
           id?: string
+          income?: number | null
           name: string
           notes?: string | null
           phone?: string | null
@@ -194,6 +196,7 @@ export type Database = {
           email?: string | null
           gender?: string | null
           id?: string
+          income?: number | null
           name?: string
           notes?: string | null
           phone?: string | null
