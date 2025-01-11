@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { parseISO, isValid } from "date-fns";
 
 interface ReportContentProps {
   fields: FormField[];
@@ -67,14 +68,30 @@ export const ReportContent = ({
       // If there's no created_at, we'll include the row
       if (!row.created_at) return true;
 
-      const rowDate = new Date(row.created_at);
-      const fromDate = filterDateRange.from;
-      const toDate = filterDateRange.to;
+      // Ensure created_at is a valid date string
+      if (typeof row.created_at !== 'string' && typeof row.created_at !== 'number') {
+        console.log('Invalid created_at type:', typeof row.created_at, row.created_at);
+        return true;
+      }
 
-      if (!fromDate) return true;
-      if (!toDate) return rowDate >= fromDate;
-      
-      return rowDate >= fromDate && rowDate <= toDate;
+      try {
+        const rowDate = parseISO(row.created_at.toString());
+        if (!isValid(rowDate)) {
+          console.log('Invalid date:', row.created_at);
+          return true;
+        }
+
+        const fromDate = filterDateRange.from;
+        const toDate = filterDateRange.to;
+
+        if (!fromDate) return true;
+        if (!toDate) return rowDate >= fromDate;
+        
+        return rowDate >= fromDate && rowDate <= toDate;
+      } catch (error) {
+        console.error('Error parsing date:', error);
+        return true;
+      }
     });
 
     console.log('Filtered data:', filtered);
