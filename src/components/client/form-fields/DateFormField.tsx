@@ -36,18 +36,38 @@ export const DateFormField = ({ field, form }: DateFormFieldProps) => {
   }, [field.field_id, form]);
 
   const handleDateChange = (value: string) => {
-    setInputValue(value);
+    // Remove any non-numeric characters
+    const numericValue = value.replace(/\D/g, '');
     
-    // Only attempt to parse if we have a complete date string
-    if (value.length === 10) {
+    // Format the date with slashes
+    let formattedValue = '';
+    if (numericValue.length > 0) {
+      // Handle day
+      formattedValue = numericValue.slice(0, 2);
+      if (numericValue.length > 2) {
+        // Handle month
+        formattedValue += '/' + numericValue.slice(2, 4);
+        if (numericValue.length > 4) {
+          // Handle year - ensure we only take up to 4 digits for year
+          formattedValue += '/' + numericValue.slice(4, 8);
+        }
+      }
+    }
+
+    setInputValue(formattedValue);
+    
+    // Only attempt to parse if we have a complete date string (DD/MM/YYYY)
+    if (formattedValue.length === 10) {
       try {
-        const parsedDate = parse(value, 'dd/MM/yyyy', new Date());
+        const parsedDate = parse(formattedValue, 'dd/MM/yyyy', new Date());
         if (isValid(parsedDate)) {
           console.log('Valid date parsed:', parsedDate);
           // Format the date as ISO string for database storage
           form.setValue(field.field_id, format(parsedDate, 'yyyy-MM-dd'));
+          // Clear any previous errors
+          form.clearErrors(field.field_id);
         } else {
-          console.log('Invalid date:', value);
+          console.log('Invalid date:', formattedValue);
           form.setError(field.field_id, {
             type: 'manual',
             message: 'Please enter a valid date in DD/MM/YYYY format'
@@ -90,19 +110,9 @@ export const DateFormField = ({ field, form }: DateFormFieldProps) => {
             <Input
               placeholder="DD/MM/YYYY"
               value={inputValue}
-              onChange={(e) => {
-                const value = e.target.value;
-                // Add slashes automatically
-                let formattedValue = value.replace(/[^0-9]/g, '');
-                if (formattedValue.length > 0) {
-                  formattedValue = formattedValue.match(/.{1,2}/g)?.join('/') || '';
-                  if (formattedValue.length > 10) {
-                    formattedValue = formattedValue.slice(0, 10);
-                  }
-                }
-                handleDateChange(formattedValue);
-              }}
+              onChange={(e) => handleDateChange(e.target.value)}
               onBlur={formField.onBlur}
+              maxLength={10}
             />
           </FormControl>
           <FormMessage />
