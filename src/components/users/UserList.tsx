@@ -12,6 +12,68 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 
+// Move user actions to a separate component
+const UserActions = ({ userId, currentUserId, loading, onDelete }: { 
+  userId: string; 
+  currentUserId: string | undefined; 
+  loading: boolean;
+  onDelete: (userId: string) => Promise<void>;
+}) => (
+  <Button
+    variant="ghost"
+    size="icon"
+    onClick={() => onDelete(userId)}
+    disabled={loading || userId === currentUserId}
+  >
+    <Trash2 className="h-4 w-4" />
+  </Button>
+);
+
+// Move name editing to a separate component
+const UserNameEditor = ({ 
+  user, 
+  isEditing, 
+  editingName, 
+  onStartEdit, 
+  onSave, 
+  onCancel, 
+  onNameChange 
+}: {
+  user: { id: string; name: string; role: string };
+  isEditing: boolean;
+  editingName: string;
+  onStartEdit: () => void;
+  onSave: () => void;
+  onCancel: () => void;
+  onNameChange: (value: string) => void;
+}) => (
+  <div className="flex items-center gap-2">
+    {user.role === 'admin' && <Shield className="h-4 w-4 text-blue-500" />}
+    {isEditing ? (
+      <div className="flex items-center gap-2">
+        <Input
+          value={editingName}
+          onChange={(e) => onNameChange(e.target.value)}
+          className="max-w-[200px]"
+        />
+        <Button variant="ghost" size="icon" onClick={onSave}>
+          <Check className="h-4 w-4" />
+        </Button>
+        <Button variant="ghost" size="icon" onClick={onCancel}>
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2">
+        <span>{user.name || 'Unnamed User'}</span>
+        <Button variant="ghost" size="icon" onClick={onStartEdit}>
+          <Pencil className="h-4 w-4" />
+        </Button>
+      </div>
+    )}
+  </div>
+);
+
 export const UserList = () => {
   const [loading, setLoading] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
@@ -19,12 +81,11 @@ export const UserList = () => {
   const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: users, isLoading, error, refetch } = useQuery({
+  const { data: users, isLoading, error } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
       console.log('Fetching users...');
       
-      // First, get all profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, name, email');
@@ -34,7 +95,6 @@ export const UserList = () => {
         throw profilesError;
       }
 
-      // Then get their roles
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id, role');
@@ -44,7 +104,6 @@ export const UserList = () => {
         throw rolesError;
       }
 
-      // Combine the data
       const transformedData = profiles.map(profile => ({
         id: profile.id,
         name: profile.name || 'Unnamed User',
@@ -57,19 +116,15 @@ export const UserList = () => {
     },
   });
 
-  const handleDeleteUser = async (userId: string, userRole: string) => {
+  const handleDeleteUser = async (userId: string) => {
     try {
       setLoading(true);
-
-      // Check if trying to delete own account
       if (userId === currentUser?.id) {
         toast.error("You cannot delete your own account");
         return;
       }
 
-      console.log('Calling delete-user function for userId:', userId);
-      
-      const { data: functionData, error: functionError } = await supabase.functions.invoke('delete-user', {
+      const { error: functionError } = await supabase.functions.invoke('delete-user', {
         body: { userId }
       });
 
@@ -79,9 +134,8 @@ export const UserList = () => {
         return;
       }
 
-      console.log('Delete user response:', functionData);
       toast.success('User deleted successfully');
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ['users'] });
     } catch (error) {
       console.error('Error in handleDeleteUser:', error);
       toast.error('Failed to delete user');
@@ -170,62 +224,32 @@ export const UserList = () => {
             <TableBody>
               {users?.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell className="flex items-center gap-2">
-                    {user.role === 'admin' && (
-                      <Shield className="h-4 w-4 text-blue-500" />
-                    )}
-                    {editingUserId === user.id ? (
-                      <div className="flex items-center gap-2">
-                        <Input
-                          value={editingName}
-                          onChange={(e) => setEditingName(e.target.value)}
-                          className="max-w-[200px]"
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleUpdateName(user.id)}
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={cancelEditing}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <span>{user.name || 'Unnamed User'}</span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => startEditing(user)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
+                  <TableCell>
+                    <UserNameEditor
+                      user={user}
+                      isEditing={editingUserId === user.id}
+                      editingName={editingName}
+                      onStartEdit={() => startEditing(user)}
+                      onSave={() => handleUpdateName(user.id)}
+                      onCancel={cancelEditing}
+                      onNameChange={setEditingName}
+                    />
                   </TableCell>
                   <TableCell>{user.email || 'No email'}</TableCell>
                   <TableCell>
                     <UserRoleSelect 
                       userId={user.id} 
                       currentRole={user.role} 
-                      onRoleChange={() => refetch()}
+                      onRoleChange={() => queryClient.invalidateQueries({ queryKey: ['users'] })}
                     />
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteUser(user.id, user.role)}
-                      disabled={loading || user.id === currentUser?.id}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <UserActions
+                      userId={user.id}
+                      currentUserId={currentUser?.id}
+                      loading={loading}
+                      onDelete={handleDeleteUser}
+                    />
                   </TableCell>
                 </TableRow>
               ))}
