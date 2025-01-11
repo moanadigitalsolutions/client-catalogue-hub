@@ -45,7 +45,7 @@ export const UserList = () => {
         id: profile.id,
         name: profile.name,
         email: profile.email || '',
-        role: userRoles.find(role => role.user_id === profile.id)?.role || 'employee'
+        role: (userRoles.find(role => role.user_id === profile.id)?.role || 'employee') as UserRole
       }));
 
       console.log('Transformed user data:', transformedData);
