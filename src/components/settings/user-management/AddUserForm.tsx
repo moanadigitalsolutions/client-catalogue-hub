@@ -19,9 +19,12 @@ export const AddUserForm = ({ loading, onUserAdded }: AddUserFormProps) => {
     email: "",
     role: "employee" as UserRole,
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAddUser = async () => {
     try {
+      setIsSubmitting(true);
+
       if (!newUser.name.trim() || !newUser.email.trim()) {
         toast.error("Please fill in all fields");
         return;
@@ -34,44 +37,22 @@ export const AddUserForm = ({ loading, onUserAdded }: AddUserFormProps) => {
 
       console.log("Creating new user with email:", newUser.email);
 
-      // Generate a temporary password
-      const tempPassword = Math.random().toString(36).slice(-8);
-
-      // Sign up the user using the standard auth API
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email: newUser.email,
-        password: tempPassword,
-        options: {
-          data: {
-            name: newUser.name,
-          },
-        },
+      // Call the Edge Function to create the user
+      const { data, error: functionError } = await supabase.functions.invoke('create-user', {
+        body: {
+          email: newUser.email,
+          name: newUser.name,
+          role: newUser.role
+        }
       });
 
-      if (signUpError) {
-        console.error("Error creating user:", signUpError);
+      if (functionError) {
+        console.error("Error from create-user function:", functionError);
         toast.error("Failed to create user");
         return;
       }
 
-      if (!authData.user) {
-        toast.error("Failed to create user");
-        return;
-      }
-
-      // Assign user role
-      const { error: roleError } = await supabase
-        .from("user_roles")
-        .insert({
-          user_id: authData.user.id,
-          role: newUser.role,
-        });
-
-      if (roleError) {
-        console.error("Error assigning role:", roleError);
-        toast.error("Failed to assign role");
-        return;
-      }
+      console.log("User creation response:", data);
 
       setNewUser({ name: "", email: "", role: "employee" });
       toast.success("User added successfully. They will receive an email to set their password.");
@@ -79,6 +60,8 @@ export const AddUserForm = ({ loading, onUserAdded }: AddUserFormProps) => {
     } catch (error) {
       console.error("Error in handleAddUser:", error);
       toast.error("Failed to create user");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -91,7 +74,7 @@ export const AddUserForm = ({ loading, onUserAdded }: AddUserFormProps) => {
           value={newUser.name}
           onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
           placeholder="Enter user's name"
-          disabled={loading}
+          disabled={loading || isSubmitting}
         />
       </div>
 
@@ -103,7 +86,7 @@ export const AddUserForm = ({ loading, onUserAdded }: AddUserFormProps) => {
           value={newUser.email}
           onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
           placeholder="Enter user's email"
-          disabled={loading}
+          disabled={loading || isSubmitting}
         />
       </div>
 
@@ -115,7 +98,7 @@ export const AddUserForm = ({ loading, onUserAdded }: AddUserFormProps) => {
             setNewUser({ ...newUser, role: value })
           }
           className="flex gap-4"
-          disabled={loading}
+          disabled={loading || isSubmitting}
         >
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="admin" id="admin" />
@@ -128,9 +111,13 @@ export const AddUserForm = ({ loading, onUserAdded }: AddUserFormProps) => {
         </RadioGroup>
       </div>
 
-      <Button onClick={handleAddUser} className="w-full" disabled={loading}>
+      <Button 
+        onClick={handleAddUser} 
+        className="w-full" 
+        disabled={loading || isSubmitting}
+      >
         <PlusCircle className="mr-2 h-4 w-4" />
-        {loading ? "Adding User..." : "Add User"}
+        {isSubmitting ? "Adding User..." : "Add User"}
       </Button>
     </div>
   );
