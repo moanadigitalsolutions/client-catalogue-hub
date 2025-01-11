@@ -145,11 +145,21 @@ const fetchReportData = async (fields: string[], dateRange?: { from: Date; to: D
 
     if (error) {
       console.error('Error fetching report data:', error);
-      throw error;
+      return [];
     }
 
-    // Ensure we return an array that matches ReportData type
-    return (data || []) as ReportData[];
+    // Ensure the data matches our ReportData type
+    if (!data) return [];
+    
+    // Transform the data to ensure it matches ReportData type
+    return data.map(row => {
+      const typedRow: ReportData = {};
+      fields.forEach(field => {
+        typedRow[field] = row[field] ?? null;
+      });
+      return typedRow;
+    });
+
   } catch (error) {
     console.error('Error in fetchReportData:', error);
     return [];
