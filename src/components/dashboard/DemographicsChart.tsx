@@ -27,6 +27,24 @@ const DemographicsChart = ({ data = [], title, colors = DEFAULT_COLORS }: Demogr
     );
   }
 
+  // Filter out any entries with zero values
+  const validData = data.filter(item => item.value > 0);
+
+  if (validData.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex h-[200px] items-center justify-center">
+            <p className="text-sm text-muted-foreground">No data available</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const chartConfig = {
     background: {
       theme: {
@@ -45,7 +63,7 @@ const DemographicsChart = ({ data = [], title, colors = DEFAULT_COLORS }: Demogr
         <ChartContainer className="h-[200px]" config={chartConfig}>
           <PieChart>
             <Pie
-              data={data}
+              data={validData}
               cx="50%"
               cy="50%"
               innerRadius={60}
@@ -53,7 +71,7 @@ const DemographicsChart = ({ data = [], title, colors = DEFAULT_COLORS }: Demogr
               paddingAngle={5}
               dataKey="value"
             >
-              {data.map((entry, index) => (
+              {validData.map((entry, index) => (
                 <Cell 
                   key={`cell-${index}`} 
                   fill={colors[index % colors.length]} 
@@ -67,7 +85,7 @@ const DemographicsChart = ({ data = [], title, colors = DEFAULT_COLORS }: Demogr
           </PieChart>
         </ChartContainer>
         <div className="mt-4 flex flex-wrap justify-center gap-4">
-          {data.map((entry, index) => (
+          {validData.map((entry, index) => (
             <div key={entry.name} className="flex items-center gap-2">
               <div 
                 className="h-3 w-3 rounded-sm" 

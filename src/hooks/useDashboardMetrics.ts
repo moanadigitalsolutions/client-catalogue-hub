@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { startOfMonth, subMonths, format, parseISO } from "date-fns";
+import { startOfMonth, subMonths, format, parseISO, differenceInYears } from "date-fns";
 
 interface DashboardMetric {
   name: string;
@@ -57,9 +57,9 @@ export const useDashboardMetrics = () => {
           return acc;
         }, {});
 
-        return Object.entries(fieldData).map(([name, value]) => ({
+        return Object.entries(fieldData).map(([name, value]): DashboardMetric => ({
           name,
-          value: value as number
+          value: Number(value)
         }));
       };
 
@@ -83,7 +83,8 @@ export const useDashboardMetrics = () => {
         const timeData = totalClients.reduce((acc: { [key: string]: number }, client: any) => {
           if (client[fieldId]) {
             const date = new Date(client[fieldId]);
-            const key = format(date, 'MMM yyyy');
+            // Format date in British/NZ format (DD/MM/YYYY)
+            const key = format(date, 'dd/MM/yyyy');
             acc[key] = (acc[key] || 0) + 1;
           }
           return acc;
@@ -91,7 +92,7 @@ export const useDashboardMetrics = () => {
 
         return Object.entries(timeData).map(([name, value]): DashboardMetric => ({
           name,
-          value: value
+          value: Number(value)
         }));
       };
 
@@ -104,15 +105,15 @@ export const useDashboardMetrics = () => {
             if (!client || !client[fieldId]) return null;
             
             if (fieldId === 'dob' && client[fieldId]) {
-              // Calculate age for DOB field
-              const birthDate = new Date(client[fieldId]);
-              const today = new Date();
-              let age = today.getFullYear() - birthDate.getFullYear();
-              const m = today.getMonth() - birthDate.getMonth();
-              if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-                age--;
+              try {
+                // Parse the date and calculate age
+                const birthDate = parseISO(client[fieldId]);
+                const age = differenceInYears(new Date(), birthDate);
+                return age;
+              } catch (error) {
+                console.error('Error calculating age:', error);
+                return null;
               }
-              return age;
             }
             
             const value = parseFloat(client[fieldId]);
@@ -128,7 +129,7 @@ export const useDashboardMetrics = () => {
         const bucketSize = range / 5;
 
         const buckets: DashboardMetric[] = Array.from({ length: 5 }, (_, i) => ({
-          name: `${(min + (i * bucketSize)).toFixed(1)} - ${(min + ((i + 1) * bucketSize)).toFixed(1)}`,
+          name: `${Math.round(min + (i * bucketSize))} - ${Math.round(min + ((i + 1) * bucketSize))}`,
           value: 0
         }));
 
