@@ -44,11 +44,7 @@ export const DocumentUpload = ({ clientId }: DocumentUploadProps) => {
       <DocumentList
         documents={documents}
         formatFileSize={formatFileSize}
-        onDelete={(id) => {
-          if (window.confirm('Are you sure you want to delete this document?')) {
-            deleteMutation.mutate(id);
-          }
-        }}
+        onDelete={(id) => deleteMutation.mutate(id)}
       />
     </div>
   );

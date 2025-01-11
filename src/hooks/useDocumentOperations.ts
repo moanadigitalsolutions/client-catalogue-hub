@@ -11,7 +11,6 @@ export const useDocumentOperations = (clientId: string, onSuccess?: () => void) 
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Query for fetching documents
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ['documents', clientId],
     queryFn: async () => {
@@ -31,7 +30,6 @@ export const useDocumentOperations = (clientId: string, onSuccess?: () => void) 
     }
   });
 
-  // Upload mutation
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
       try {
@@ -64,7 +62,6 @@ export const useDocumentOperations = (clientId: string, onSuccess?: () => void) 
 
         if (dbError) throw dbError;
 
-        // Track the upload activity
         await trackActivity('Uploaded document');
         
         toast.success('Document uploaded successfully');
@@ -82,7 +79,6 @@ export const useDocumentOperations = (clientId: string, onSuccess?: () => void) 
     }
   });
 
-  // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (documentId: string) => {
       const { error } = await supabase

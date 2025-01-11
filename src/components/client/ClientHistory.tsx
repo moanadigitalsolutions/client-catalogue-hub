@@ -94,19 +94,13 @@ export const ClientHistory = ({ clientId }: ClientHistoryProps) => {
       <CardContent className="p-6">
         <ScrollArea className="h-[400px] pr-4">
           <div className="relative">
-            {/* Timeline line */}
             <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-gray-200" />
-
-            {/* Activity items */}
             <div className="space-y-6">
               {activities?.map((activity) => (
                 <div key={activity.id} className="relative flex items-start gap-4 ml-8">
-                  {/* Timeline dot */}
                   <div className={`absolute -left-10 mt-1 p-1 rounded-full bg-white ring-2 ${getActivityColor(activity.activity_type)} ring-offset-2`}>
                     {getActivityIcon(activity.activity_type)}
                   </div>
-
-                  {/* Activity content */}
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium">
@@ -122,7 +116,6 @@ export const ClientHistory = ({ clientId }: ClientHistoryProps) => {
                   </div>
                 </div>
               ))}
-
               {(!activities || activities.length === 0) && (
                 <p className="text-center text-sm text-muted-foreground py-4">
                   No activity history available
