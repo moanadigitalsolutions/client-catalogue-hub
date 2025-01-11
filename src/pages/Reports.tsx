@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useFormFields } from "@/hooks/useFormFields";
 import { useToast } from "@/hooks/use-toast";
 import { DateRange } from "react-day-picker";
@@ -15,6 +15,34 @@ const Reports = () => {
   const [selectedFormat, setSelectedFormat] = useState<"pdf" | "excel">("pdf");
   const [isExporting, setIsExporting] = useState(false);
   const [previewData, setPreviewData] = useState<ReportData[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch preview data when selected fields change
+  useEffect(() => {
+    const fetchPreviewData = async () => {
+      if (selectedFields.length === 0) {
+        setPreviewData([]);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const data = await generatePreviewData(selectedFields);
+        setPreviewData(data);
+      } catch (error) {
+        console.error("Error fetching preview data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load preview data. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPreviewData();
+  }, [selectedFields, dateRange, toast]);
 
   const handleFieldToggle = (fieldId: string) => {
     setSelectedFields((prev) =>
@@ -22,21 +50,11 @@ const Reports = () => {
         ? prev.filter((id) => id !== fieldId)
         : [...prev, fieldId]
     );
-    // Update preview data when fields change
-    const updatedFields = selectedFields.includes(fieldId)
-      ? selectedFields.filter((id) => id !== fieldId)
-      : [...selectedFields, fieldId];
-    
-    const newPreviewData = generatePreviewData(updatedFields);
-    setPreviewData(newPreviewData);
   };
 
   const handleSelectAll = () => {
     const allFieldIds = fields.map((f) => f.field_id);
     setSelectedFields(allFieldIds);
-    // Update preview data with all fields
-    const newPreviewData = generatePreviewData(allFieldIds);
-    setPreviewData(newPreviewData);
   };
 
   const handleExport = async (format: "pdf" | "excel") => {
@@ -110,7 +128,7 @@ const Reports = () => {
         setSelectedFormat={setSelectedFormat}
         onExport={handleExport}
         onSaveTemplate={handleSaveReportTemplate}
-        isExporting={isExporting}
+        isExporting={isExporting || isLoading}
         previewData={previewData}
       />
     </div>

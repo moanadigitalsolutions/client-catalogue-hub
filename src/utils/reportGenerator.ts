@@ -2,10 +2,10 @@ import { format } from "date-fns";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface ReportData {
-  [key: string]: string | number | boolean;
-  dob?: string;
+  [key: string]: string | number | boolean | null;
 }
 
 export interface ReportOptions {
@@ -109,8 +109,8 @@ const generateExcel = (data: ReportData[], fields: string[]): Blob => {
 export const generateReport = async (format: "pdf" | "excel", options: ReportOptions) => {
   console.log('Generating report with options:', options);
   
-  // Get sample data for now - in a real app, this would come from your backend
-  const data = generatePreviewData(options.fields);
+  // Get real data from the database
+  const data = await fetchReportData(options.fields, options.dateRange);
   
   let blob: Blob;
   let filename: string;
@@ -126,40 +126,32 @@ export const generateReport = async (format: "pdf" | "excel", options: ReportOpt
   return { blob, filename };
 };
 
-// Generate preview data
-export const generatePreviewData = (fields: string[]): ReportData[] => {
-  console.log('Generating preview data for fields:', fields);
+// Fetch real data from Supabase
+const fetchReportData = async (fields: string[], dateRange?: { from: Date; to: Date }): Promise<ReportData[]> => {
+  console.log('Fetching report data for fields:', fields);
   
-  const sampleData = [
-    {
-      name: "John Doe",
-      email: "john@example.com",
-      phone: "+1234567890",
-      dob: "1990-01-01",
-      street: "123 Main St",
-      city: "New York",
-      postcode: "10001",
-      notes: "Some notes about John",
-    },
-    {
-      name: "Jane Smith",
-      email: "jane@example.com",
-      phone: "+0987654321",
-      dob: "1985-05-15",
-      street: "456 Park Ave",
-      city: "Los Angeles",
-      postcode: "90001",
-      notes: "Some notes about Jane",
-    }
-  ];
+  let query = supabase
+    .from('clients')
+    .select(fields.join(','));
 
-  return sampleData.map(record => {
-    const filteredRecord: ReportData = {};
-    fields.forEach(field => {
-      if (field in record) {
-        filteredRecord[field] = record[field];
-      }
-    });
-    return filteredRecord;
-  });
+  // Add date range filter if provided
+  if (dateRange) {
+    query = query.gte('created_at', dateRange.from.toISOString())
+                .lte('created_at', dateRange.to.toISOString());
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Error fetching report data:', error);
+    throw error;
+  }
+
+  return data || [];
+};
+
+// Generate preview data from real database
+export const generatePreviewData = async (fields: string[]): Promise<ReportData[]> => {
+  console.log('Generating preview data for fields:', fields);
+  return await fetchReportData(fields);
 };
