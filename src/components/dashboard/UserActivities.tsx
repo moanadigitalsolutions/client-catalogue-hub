@@ -4,9 +4,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
 
 const UserActivities = () => {
   const { user } = useAuth();
+  const [isExpanded, setIsExpanded] = useState(false);
   
   const { data: activities, isLoading } = useQuery({
     queryKey: ['user-activities'],
@@ -20,7 +24,7 @@ const UserActivities = () => {
           profiles (name)
         `)
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(isExpanded ? 50 : 10);
 
       if (error) {
         console.error('Error fetching activities:', error);
@@ -51,11 +55,23 @@ const UserActivities = () => {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Recent Activities</CardTitle>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="h-8 w-8 p-0"
+        >
+          {isExpanded ? (
+            <ChevronUp className="h-4 w-4" />
+          ) : (
+            <ChevronDown className="h-4 w-4" />
+          )}
+        </Button>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[200px]">
+        <ScrollArea className={isExpanded ? "h-[400px]" : "h-[200px]"}>
           {activities && activities.length > 0 ? (
             activities.map((activity) => (
               <div key={activity.id} className="flex items-center justify-between py-2 border-b last:border-0">

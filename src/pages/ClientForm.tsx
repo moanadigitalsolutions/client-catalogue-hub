@@ -1,135 +1,127 @@
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ClientFormHeader } from "@/components/client/ClientFormHeader";
-import { DocumentUpload } from "@/components/client/DocumentUpload";
-import { ClientHistory } from "@/components/client/ClientHistory";
-import { useFormFields } from "@/hooks/useFormFields";
-import { useFormFieldsSubscription } from "@/hooks/useFormFieldsSubscription";
-import { useClientMutations } from "@/hooks/useClientMutations";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import { useQuery } from "@tanstack/react-query";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserCircle, FileText, History } from "lucide-react";
-import { ClientFormFields } from "@/components/client/ClientFormFields";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { trackActivity } from "@/utils/activity";
 
 const ClientForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const isEditing = Boolean(id);
-  const { fields } = useFormFields();
-  const mutation = useClientMutations(id);
-  
-  useFormFieldsSubscription();
+  const [loading, setLoading] = useState(false);
+  const { register, handleSubmit: hookFormSubmit, reset } = useForm();
 
-  const form = useForm({
-    defaultValues: {},
-  });
+  useEffect(() => {
+    const fetchClient = async () => {
+      if (!id) return;
 
-  const { isLoading } = useQuery({
-    queryKey: ['client', id],
-    queryFn: async () => {
-      if (!id) return null;
-      console.log('Fetching client details:', id);
-      
-      const { data, error } = await supabase
-        .from('clients')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('id', id)
+          .single();
 
-      if (error) {
+        if (error) throw error;
+        if (data) reset(data);
+      } catch (error) {
         console.error('Error fetching client:', error);
-        throw error;
+        toast.error('Error fetching client details');
+      } finally {
+        setLoading(false);
       }
+    };
 
-      if (!data) {
-        navigate('/clients');
-        return null;
+    fetchClient();
+  }, [id, reset]);
+
+  const handleSubmit = async (data: any) => {
+    try {
+      if (id) {
+        // Update existing client
+        const { error } = await supabase
+          .from('clients')
+          .update(data)
+          .eq('id', id);
+        
+        if (error) throw error;
+        
+        await trackActivity('Updated client profile');
+        toast.success('Client updated successfully');
+      } else {
+        // Create new client
+        const { error } = await supabase
+          .from('clients')
+          .insert([data]);
+        
+        if (error) throw error;
+        
+        await trackActivity('Created new client');
+        toast.success('Client created successfully');
       }
+      
+      navigate('/clients');
+    } catch (error) {
+      console.error('Error saving client:', error);
+      toast.error('Error saving client');
+    }
+  };
 
-      // Map dob to birth_date for the form
-      if (data.dob) {
-        data.birth_date = data.dob;
-      }
-
-      console.log('Client details:', data);
-      form.reset(data);
-      return data;
-    },
-    enabled: isEditing,
-  });
-
-  if (isLoading) {
-    return <div className="flex items-center justify-center p-8">Loading client details...</div>;
+  if (loading) {
+    return <div>Loading...</div>;
   }
 
   return (
-    <div className="container max-w-3xl space-y-6 p-4">
-      <ClientFormHeader isEditing={isEditing} />
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Client Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="personal" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
-              <TabsTrigger value="personal" className="flex items-center gap-2">
-                <UserCircle className="h-4 w-4" />
-                Personal Info
-              </TabsTrigger>
-              {isEditing && (
-                <>
-                  <TabsTrigger value="documents" className="flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    Documents
-                  </TabsTrigger>
-                  <TabsTrigger value="history" className="flex items-center gap-2">
-                    <History className="h-4 w-4" />
-                    History
-                  </TabsTrigger>
-                </>
-              )}
-            </TabsList>
-
-            <TabsContent value="personal">
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-6">
-                  <ClientFormFields form={form} fields={fields} />
-                  
-                  <div className="flex justify-end space-x-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => navigate("/clients")}
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={mutation.isPending}>
-                      {isEditing ? "Update Client" : "Create Client"}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </TabsContent>
-
-            {isEditing && (
-              <>
-                <TabsContent value="documents">
-                  <DocumentUpload clientId={id} />
-                </TabsContent>
-                <TabsContent value="history">
-                  <ClientHistory clientId={id} />
-                </TabsContent>
-              </>
-            )}
-          </Tabs>
-        </CardContent>
-      </Card>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>{id ? 'Edit Client' : 'New Client'}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={hookFormSubmit(handleSubmit)} className="space-y-4">
+          <div>
+            <Label htmlFor="name">Name</Label>
+            <Input id="name" {...register('name')} required />
+          </div>
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" type="email" {...register('email')} required />
+          </div>
+          <div>
+            <Label htmlFor="phone">Phone</Label>
+            <Input id="phone" {...register('phone')} />
+          </div>
+          <div>
+            <Label htmlFor="company">Company</Label>
+            <Input id="company" {...register('company')} />
+          </div>
+          <div>
+            <Label htmlFor="website">Website</Label>
+            <Input id="website" {...register('website')} />
+          </div>
+          <div>
+            <Label htmlFor="notes">Notes</Label>
+            <Input id="notes" {...register('notes')} />
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate('/clients')}
+            >
+              Cancel
+            </Button>
+            <Button type="submit">
+              {id ? 'Update Client' : 'Create Client'}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 

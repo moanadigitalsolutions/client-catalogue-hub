@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 
 export const trackActivity = async (activityType: string) => {
   try {
+    console.log('Tracking activity:', activityType);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
