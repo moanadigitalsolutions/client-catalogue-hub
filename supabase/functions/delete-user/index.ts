@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('Delete user function called')
+    console.log('Deactivate user function called')
     
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
     )
 
     const { userId } = await req.json()
-    console.log('Attempting to delete user:', userId)
+    console.log('Attempting to deactivate user:', userId)
 
     if (!userId) {
       throw new Error('userId is required')
@@ -45,62 +45,22 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log('User found, proceeding with deletion')
+    console.log('User found, proceeding with deactivation')
 
-    // Delete in correct order to maintain referential integrity
-    // 1. First delete user_activities
-    const { error: activitiesError } = await supabaseClient
-      .from('user_activities')
-      .delete()
-      .eq('user_id', userId)
-
-    if (activitiesError) {
-      console.error('Error deleting user activities:', activitiesError)
-      throw activitiesError
-    }
-
-    console.log('User activities deleted successfully')
-
-    // 2. Delete documents uploaded by the user
-    const { error: documentsError } = await supabaseClient
-      .from('client_documents')
-      .delete()
-      .eq('uploaded_by', userId)
-
-    if (documentsError) {
-      console.error('Error deleting user documents:', documentsError)
-      throw documentsError
-    }
-
-    console.log('User documents deleted successfully')
-
-    // 3. Delete from user_roles
-    const { error: rolesError } = await supabaseClient
-      .from('user_roles')
-      .delete()
-      .eq('user_id', userId)
-
-    if (rolesError) {
-      console.error('Error deleting user roles:', rolesError)
-      throw rolesError
-    }
-
-    console.log('User roles deleted successfully')
-
-    // 4. Delete from profiles
+    // Update profile to mark as deactivated
     const { error: profileError } = await supabaseClient
       .from('profiles')
-      .delete()
+      .update({ is_active: false })
       .eq('id', userId)
 
     if (profileError) {
-      console.error('Error deleting profile:', profileError)
+      console.error('Error updating profile:', profileError)
       throw profileError
     }
 
-    console.log('Profile deleted successfully')
+    console.log('Profile marked as inactive')
 
-    // 5. Finally delete the auth user
+    // Delete auth user to prevent future logins
     const { error: deleteError } = await supabaseClient.auth.admin.deleteUser(userId)
 
     if (deleteError) {
@@ -108,17 +68,17 @@ Deno.serve(async (req) => {
       throw deleteError
     }
 
-    console.log('User deleted successfully:', userId)
+    console.log('Auth user deleted successfully, user can no longer login:', userId)
 
     return new Response(
-      JSON.stringify({ message: 'User deleted successfully' }),
+      JSON.stringify({ message: 'User deactivated successfully' }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       }
     )
   } catch (error) {
-    console.error('Error in delete-user function:', error)
+    console.error('Error in deactivate-user function:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       {
