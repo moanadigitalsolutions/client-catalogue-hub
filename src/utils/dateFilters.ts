@@ -19,7 +19,9 @@ export const filterDataByDateRange = (data: ReportData[], dateRange: DateRange |
     try {
       const rowDate = typeof row.created_at === 'string' 
         ? parseISO(row.created_at)
-        : new Date(row.created_at);
+        : row.created_at instanceof Date 
+          ? row.created_at 
+          : new Date(row.created_at as number);
       
       if (!isValid(rowDate)) {
         console.log('Invalid date found:', row.created_at);
