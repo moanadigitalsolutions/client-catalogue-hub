@@ -82,10 +82,14 @@ export const useDashboardMetrics = () => {
         if (!Array.isArray(totalClients)) return [];
         const timeData = totalClients.reduce((acc: { [key: string]: number }, client: any) => {
           if (client[fieldId]) {
-            const date = new Date(client[fieldId]);
-            // Format date in British/NZ format (DD/MM/YYYY)
-            const key = format(date, 'dd/MM/yyyy');
-            acc[key] = (acc[key] || 0) + 1;
+            try {
+              const date = parseISO(client[fieldId]);
+              // Format date in British/NZ format (DD/MM/YYYY)
+              const key = format(date, 'dd/MM/yyyy');
+              acc[key] = (acc[key] || 0) + 1;
+            } catch (error) {
+              console.error('Error processing date:', error);
+            }
           }
           return acc;
         }, {});
@@ -142,7 +146,7 @@ export const useDashboardMetrics = () => {
           }
         });
 
-        return buckets;
+        return buckets.filter(bucket => bucket.value > 0);
       };
 
       return {
