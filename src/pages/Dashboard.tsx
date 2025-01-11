@@ -7,6 +7,8 @@ import UserActivities from "@/components/dashboard/UserActivities";
 import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { DashboardSettings } from "@/components/dashboard/DashboardSettings";
 import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 
 interface CustomGraph {
   field: string;
@@ -71,14 +73,34 @@ const Dashboard = () => {
           description="New clients this month" 
         />
         <DashboardMetricCard 
-          title="Active Clients" 
-          value={metrics.activeClients}
-          description="Currently active clients" 
+          title="Growth Rate" 
+          value={metrics.monthlyGrowthRate}
+          description="Month-over-month growth rate (%)" 
+        />
+        <DashboardMetricCard 
+          title="Website Presence" 
+          value={metrics.websitePresenceRate}
+          description="Clients with website (%)" 
         />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <ClientsByCityChart data={metrics.cityData} />
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">Profile Completeness</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Average completeness</span>
+                <span className="text-sm font-medium">
+                  {metrics.averageProfileCompleteness.toFixed(1)}%
+                </span>
+              </div>
+              <Progress value={metrics.averageProfileCompleteness} />
+            </div>
+          </CardContent>
+        </Card>
         <MonthlyGrowthChart data={metrics.monthlyData} />
       </div>
 
@@ -96,6 +118,45 @@ const Dashboard = () => {
           data={metrics.ageGroups} 
           title="Age Distribution"
         />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <ClientsByCityChart data={metrics.cityData} />
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">Key Insights</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-4">
+              <li className="flex items-center space-x-2">
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Client Growth</p>
+                  <p className="text-sm text-muted-foreground">
+                    {metrics.monthlyGrowthRate > 0 
+                      ? `Growing at ${metrics.monthlyGrowthRate.toFixed(1)}% monthly`
+                      : 'No growth this month'}
+                  </p>
+                </div>
+              </li>
+              <li className="flex items-center space-x-2">
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Profile Quality</p>
+                  <p className="text-sm text-muted-foreground">
+                    {`${metrics.averageProfileCompleteness.toFixed(1)}% average profile completeness`}
+                  </p>
+                </div>
+              </li>
+              <li className="flex items-center space-x-2">
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Online Presence</p>
+                  <p className="text-sm text-muted-foreground">
+                    {`${metrics.websitePresenceRate.toFixed(1)}% of clients have websites`}
+                  </p>
+                </div>
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
       </div>
 
       {customGraphs.length > 0 && (

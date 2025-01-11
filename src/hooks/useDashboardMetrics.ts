@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { startOfMonth, subMonths, format, parseISO } from "date-fns";
 
 export const useDashboardMetrics = () => {
   return useQuery({
@@ -16,19 +17,29 @@ export const useDashboardMetrics = () => {
         throw countError;
       }
 
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
+      const startOfCurrentMonth = startOfMonth(new Date());
       
       const { data: newClients, error: newClientsError } = await supabase
         .from('clients')
         .select('*')
-        .gte('created_at', startOfMonth.toISOString());
+        .gte('created_at', startOfCurrentMonth.toISOString());
 
       if (newClientsError) {
         console.error('Error fetching new clients:', newClientsError);
         throw newClientsError;
       }
+
+      // Calculate client growth rate
+      const previousMonth = subMonths(startOfCurrentMonth, 1);
+      const { data: lastMonthClients } = await supabase
+        .from('clients')
+        .select('*')
+        .gte('created_at', previousMonth.toISOString())
+        .lt('created_at', startOfCurrentMonth.toISOString());
+
+      const growthRate = lastMonthClients?.length > 0 
+        ? ((newClients.length - lastMonthClients.length) / lastMonthClients.length) * 100 
+        : 0;
 
       // Process city data
       const cityData = totalClients.reduce((acc: any[], client) => {
@@ -84,33 +95,54 @@ export const useDashboardMetrics = () => {
         return acc;
       }, []);
 
-      const monthlyData = Array.from({ length: 5 }, (_, i) => {
-        const date = new Date();
-        date.setMonth(date.getMonth() - i);
-        const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
-        const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+      // Calculate monthly growth trends
+      const monthlyData = Array.from({ length: 12 }, (_, i) => {
+        const date = subMonths(new Date(), i);
+        const monthStart = startOfMonth(date);
+        const monthEnd = startOfMonth(subMonths(date, -1));
         
         const monthClients = totalClients.filter(client => {
-          const clientDate = new Date(client.created_at);
-          return clientDate >= monthStart && clientDate <= monthEnd;
+          const clientDate = parseISO(client.created_at);
+          return clientDate >= monthStart && clientDate < monthEnd;
         });
 
         return {
-          month: date.toLocaleString('default', { month: 'short' }),
+          month: format(date, 'MMM yyyy'),
           clients: monthClients.length
         };
       }).reverse();
 
+      // Calculate engagement metrics
+      const websitePresence = totalClients.filter(client => client.website).length;
+      const websitePresenceRate = (websitePresence / totalClients.length) * 100;
+
+      // Calculate completeness of client profiles
+      const profileCompleteness = totalClients.map(client => {
+        const fields = Object.entries(client).filter(([key]) => 
+          !['id', 'created_at'].includes(key)
+        );
+        const filledFields = fields.filter(([_, value]) => 
+          value !== null && value !== ''
+        );
+        return (filledFields.length / fields.length) * 100;
+      });
+
+      const averageProfileCompleteness = profileCompleteness.reduce((a, b) => a + b, 0) / profileCompleteness.length;
+
       return {
-        totalClients: totalClients,  // Return the full array
+        totalClients,
         totalClientsCount: totalClients.length,
         newClientsThisMonth: newClients.length,
+        monthlyGrowthRate: growthRate,
         activeClients: totalClients.length,
         cityData,
         genderData,
         qualificationData,
         ageGroups,
-        monthlyData
+        monthlyData,
+        websitePresenceRate,
+        averageProfileCompleteness,
+        profileCompleteness
       };
     },
   });
