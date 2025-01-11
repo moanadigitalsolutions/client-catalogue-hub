@@ -32,6 +32,12 @@ const Dashboard = () => {
 
   // Process data for custom graphs
   const getGraphData = (fieldId: string) => {
+    // Ensure metrics.totalClients is an array before using reduce
+    if (!Array.isArray(metrics.totalClients)) {
+      console.error('totalClients is not an array:', metrics.totalClients);
+      return [];
+    }
+
     return metrics.totalClients.reduce((acc: any[], client: any) => {
       if (client[fieldId]) {
         const existingItem = acc.find(item => item.name === client[fieldId]);

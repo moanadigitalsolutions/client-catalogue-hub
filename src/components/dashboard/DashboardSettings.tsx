@@ -27,7 +27,7 @@ interface GraphConfig {
 export const DashboardSettings = ({ onAddGraph }: { 
   onAddGraph: (config: GraphConfig) => void 
 }) => {
-  const { data: formFields } = useFormFields();
+  const { fields: formFields } = useFormFields();
   const [selectedField, setSelectedField] = useState("");
   const [graphType, setGraphType] = useState<"pie" | "bar">("pie");
 
