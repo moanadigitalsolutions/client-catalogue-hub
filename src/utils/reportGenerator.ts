@@ -20,11 +20,11 @@ interface ClientData {
   dob?: string;
 }
 
-export const formatValue = (value: any, fieldId: string) => {
+export const formatValue = (value: any, fieldType: string) => {
   if (value === null || value === undefined) return '';
 
   // Handle date fields
-  if (fieldId === 'birth_date' || fieldId === 'dob') {
+  if (fieldType === 'birth_date' || fieldType === 'dob' || fieldType === 'date') {
     try {
       return format(new Date(value), 'dd/MM/yyyy');
     } catch (error) {
@@ -41,6 +41,11 @@ export const formatValue = (value: any, fieldId: string) => {
   // Handle array fields
   if (Array.isArray(value)) {
     return value.join(', ');
+  }
+
+  // Handle currency fields
+  if (fieldType === 'currency' && typeof value === 'number') {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
   }
 
   return String(value);
