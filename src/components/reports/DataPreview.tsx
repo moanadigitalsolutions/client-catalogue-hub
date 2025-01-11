@@ -16,12 +16,12 @@ interface DataPreviewProps {
 export const DataPreview = ({ data, displayFields, isLoading, formulas = [], dateRange }: DataPreviewProps) => {
   console.log('DataPreview received:', { data, displayFields, formulas, isLoading, dateRange });
   
-  // Filter data by date range if provided
+  // Filter data by client creation date if date range is provided
   const filteredData = dateRange?.from 
     ? data.filter(row => {
-        const rowDate = new Date(row.created_at as string);
-        return rowDate >= dateRange.from! && 
-               (!dateRange.to || rowDate <= dateRange.to);
+        const creationDate = new Date(row.created_at as string);
+        return creationDate >= dateRange.from! && 
+               (!dateRange.to || creationDate <= dateRange.to);
       })
     : data;
 
