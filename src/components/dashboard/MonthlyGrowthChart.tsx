@@ -16,7 +16,7 @@ const MonthlyGrowthChart = ({ data, className }: MonthlyGrowthChartProps) => {
   return (
     <Card className={className}>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base font-medium">Monthly Growth</CardTitle>
+        <CardTitle className="text-sm font-medium">Monthly Growth</CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
         <ResponsiveContainer width="100%" height={300}>
@@ -26,32 +26,26 @@ const MonthlyGrowthChart = ({ data, className }: MonthlyGrowthChartProps) => {
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis 
-              dataKey="month" 
-              stroke="#6b7280"
-              fontSize={12}
-              tickLine={false}
-            />
-            <YAxis 
-              stroke="#6b7280"
+              dataKey="month"
+              stroke="#888888"
               fontSize={12}
               tickLine={false}
               axisLine={false}
             />
-            <Tooltip 
-              contentStyle={{ 
-                background: 'white',
-                border: '1px solid #e5e7eb',
-                borderRadius: '6px',
-                fontSize: '12px'
-              }}
+            <YAxis
+              stroke="#888888"
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={(value) => `${value}`}
             />
-            <Line 
-              type="monotone" 
-              dataKey="clients" 
-              stroke="#8884d8" 
+            <Tooltip />
+            <Line
+              type="monotone"
+              dataKey="clients"
+              stroke="#8884d8"
               strokeWidth={2}
-              dot={{ fill: '#8884d8', strokeWidth: 2 }}
-              activeDot={{ r: 6, fill: '#8884d8' }}
+              dot={false}
             />
           </LineChart>
         </ResponsiveContainer>

@@ -42,9 +42,9 @@ export const useDashboardMetrics = () => {
         : 0;
 
       // Process data for analytics
-      const processFieldData = (fieldId: string) => {
+      const processFieldData = (fieldId: string): Array<{ name: string; value: number }> => {
         if (!Array.isArray(totalClients)) return [];
-        return totalClients.reduce((acc: any[], client: any) => {
+        return totalClients.reduce((acc: Array<{ name: string; value: number }>, client: any) => {
           if (client[fieldId]) {
             const value = client[fieldId];
             const existingItem = acc.find(item => item.name === value);
@@ -74,9 +74,9 @@ export const useDashboardMetrics = () => {
       };
 
       // Process time-based data
-      const processTimeData = (fieldId: string) => {
+      const processTimeData = (fieldId: string): Array<{ name: string; value: number }> => {
         if (!Array.isArray(totalClients)) return [];
-        const timeData = totalClients.reduce((acc: any, client: any) => {
+        const timeData = totalClients.reduce((acc: { [key: string]: number }, client: any) => {
           if (client[fieldId]) {
             const date = new Date(client[fieldId]);
             const key = format(date, 'MMM yyyy');
@@ -92,11 +92,13 @@ export const useDashboardMetrics = () => {
       };
 
       // Process numeric data ranges
-      const processNumericRanges = (fieldId: string) => {
+      const processNumericRanges = (fieldId: string): Array<{ name: string; value: number }> => {
         if (!Array.isArray(totalClients)) return [];
         
         const values = totalClients
           .map((client: any) => {
+            if (!client || !client[fieldId]) return null;
+            
             if (fieldId === 'dob' && client[fieldId]) {
               // Calculate age for DOB field
               const birthDate = new Date(client[fieldId]);
@@ -110,7 +112,7 @@ export const useDashboardMetrics = () => {
             }
             return parseFloat(client[fieldId]);
           })
-          .filter((value: number) => !isNaN(value));
+          .filter((value): value is number => value !== null && !isNaN(value));
 
         if (values.length === 0) return [];
 
@@ -126,7 +128,9 @@ export const useDashboardMetrics = () => {
 
         values.forEach((value: number) => {
           const bucketIndex = Math.min(Math.floor((value - min) / bucketSize), 4);
-          buckets[bucketIndex].value++;
+          if (buckets[bucketIndex]) {
+            buckets[bucketIndex].value++;
+          }
         });
 
         return buckets;
