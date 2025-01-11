@@ -8,11 +8,13 @@ import { ReportTableHeader } from "./table/TableHeader";
 import { TableContent } from "./table/TableContent";
 import { LoadingState } from "./table/LoadingState";
 import { NoDataState } from "./table/NoDataState";
+import { ReportFormula } from "./FormulaBuilder";
 
 interface DataPreviewProps {
   selectedFields: string[];
   fields: FormField[];
   dateRange?: DateRange;
+  formulas?: ReportFormula[];
 }
 
 interface ClientRow {
@@ -20,7 +22,40 @@ interface ClientRow {
   dob?: string;
 }
 
-export const DataPreview = ({ selectedFields, fields, dateRange }: DataPreviewProps) => {
+const calculateFormulaValue = (formula: ReportFormula, data: ClientRow[]) => {
+  const values = data.map(row => {
+    const fieldValues = formula.fields.map(field => Number(row[field]) || 0);
+    
+    switch (formula.operation) {
+      case "sum":
+        return fieldValues[0];
+      case "multiply":
+        return fieldValues.reduce((a, b) => a * b, 1);
+      case "divide":
+        return fieldValues[1] !== 0 ? fieldValues[0] / fieldValues[1] : 0;
+      case "subtract":
+        return fieldValues[0] - (fieldValues[1] || 0);
+      default:
+        return 0;
+    }
+  });
+
+  switch (formula.operation) {
+    case "sum":
+    case "multiply":
+    case "divide":
+    case "subtract":
+      return values.reduce((a, b) => a + b, 0);
+    case "average":
+      return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+    case "count":
+      return values.filter(v => v !== 0).length;
+    default:
+      return 0;
+  }
+};
+
+export const DataPreview = ({ selectedFields, fields, dateRange, formulas = [] }: DataPreviewProps) => {
   const { data: previewData, isLoading } = useQuery({
     queryKey: ['preview-data', selectedFields, dateRange],
     queryFn: async () => {
@@ -50,7 +85,7 @@ export const DataPreview = ({ selectedFields, fields, dateRange }: DataPreviewPr
 
       if (!data) return [];
 
-      return (data as unknown as ClientRow[]).map(row => {
+      const processedData = (data as unknown as ClientRow[]).map(row => {
         if (!row) return {};
         
         const newRow = { ...row };
@@ -58,8 +93,16 @@ export const DataPreview = ({ selectedFields, fields, dateRange }: DataPreviewPr
           newRow.birth_date = newRow.dob;
           delete newRow.dob;
         }
+
+        // Add formula results
+        formulas.forEach(formula => {
+          newRow[`formula_${formula.name}`] = calculateFormulaValue(formula, [newRow]);
+        });
+
         return newRow;
       });
+
+      return processedData;
     },
     enabled: selectedFields.length > 0,
   });
@@ -72,16 +115,35 @@ export const DataPreview = ({ selectedFields, fields, dateRange }: DataPreviewPr
     );
   }
 
+  // Add formula fields to the display fields
+  const displayFields = [
+    ...selectedFields,
+    ...formulas.map(f => `formula_${f.name}`)
+  ];
+
+  // Add formula fields to the form fields list
+  const allFields = [
+    ...fields,
+    ...formulas.map(f => ({
+      id: `formula_${f.name}`,
+      field_id: `formula_${f.name}`,
+      label: f.name,
+      type: "number" as const,
+      required: false,
+      order_index: 0
+    }))
+  ];
+
   return (
     <ScrollArea className="h-[400px] border rounded-md">
       <Table>
-        <ReportTableHeader selectedFields={selectedFields} fields={fields} />
+        <ReportTableHeader selectedFields={displayFields} fields={allFields} />
         {isLoading ? (
-          <LoadingState colSpan={selectedFields.length} />
+          <LoadingState colSpan={displayFields.length} />
         ) : previewData && previewData.length > 0 ? (
-          <TableContent data={previewData} selectedFields={selectedFields} />
+          <TableContent data={previewData} selectedFields={displayFields} />
         ) : (
-          <NoDataState colSpan={selectedFields.length} />
+          <NoDataState colSpan={displayFields.length} />
         )}
       </Table>
     </ScrollArea>

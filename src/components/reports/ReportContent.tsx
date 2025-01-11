@@ -5,6 +5,8 @@ import { DateRange } from "react-day-picker";
 import { ReportFields } from "./ReportFields";
 import { DataPreview } from "./DataPreview";
 import { ExportOptions } from "./ExportOptions";
+import { FormulaBuilder, ReportFormula } from "./FormulaBuilder";
+import { useState } from "react";
 
 interface ReportContentProps {
   fields: FormField[];
@@ -31,6 +33,12 @@ export const ReportContent = ({
   onSaveTemplate,
   isExporting,
 }: ReportContentProps) => {
+  const [formulas, setFormulas] = useState<ReportFormula[]>([]);
+
+  const handleAddFormula = (formula: ReportFormula) => {
+    setFormulas(prev => [...prev, formula]);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -46,12 +54,20 @@ export const ReportContent = ({
 
         <Separator />
 
+        <FormulaBuilder 
+          fields={fields}
+          onAddFormula={handleAddFormula}
+        />
+
+        <Separator />
+
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Data Preview</h3>
           <DataPreview 
             selectedFields={selectedFields}
             fields={fields}
             dateRange={dateRange}
+            formulas={formulas}
           />
         </div>
 
