@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { User } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Trash2, Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 
@@ -12,11 +14,13 @@ interface UserListProps {
 }
 
 export const UserList = ({ users, loading, currentUserId, onUserDeleted }: UserListProps) => {
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
+
   const handleRemoveUser = async (id: string) => {
     try {
       console.log('Calling delete-user function for userId:', id);
       
-      // Call the Edge Function to delete the user using the supabase client
       const { data: functionData, error: functionError } = await supabase.functions.invoke('delete-user', {
         body: { userId: id }
       });
@@ -36,6 +40,40 @@ export const UserList = ({ users, loading, currentUserId, onUserDeleted }: UserL
     }
   };
 
+  const startEditing = (user: User) => {
+    setEditingUserId(user.id);
+    setEditingName(user.name);
+  };
+
+  const cancelEditing = () => {
+    setEditingUserId(null);
+    setEditingName("");
+  };
+
+  const handleUpdateName = async (userId: string) => {
+    try {
+      console.log('Updating name for user:', userId);
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ name: editingName })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error updating user name:', error);
+        toast.error('Failed to update user name');
+        return;
+      }
+
+      toast.success('User name updated successfully');
+      onUserDeleted(); // Refresh the list
+      cancelEditing();
+    } catch (error) {
+      console.error('Error in handleUpdateName:', error);
+      toast.error('Failed to update user name');
+    }
+  };
+
   return (
     <div className="space-y-2">
       {users.map((user) => (
@@ -43,8 +81,41 @@ export const UserList = ({ users, loading, currentUserId, onUserDeleted }: UserL
           key={user.id}
           className="flex items-center justify-between p-3 bg-secondary rounded-lg"
         >
-          <div className="space-y-1">
-            <div className="font-medium">{user.name}</div>
+          <div className="space-y-1 flex-1">
+            {editingUserId === user.id ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  value={editingName}
+                  onChange={(e) => setEditingName(e.target.value)}
+                  className="max-w-[200px]"
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleUpdateName(user.id)}
+                >
+                  <Check className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={cancelEditing}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="font-medium">{user.name}</div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => startEditing(user)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
             <div className="text-sm text-muted-foreground">
               {user.email} ({user.role})
             </div>
