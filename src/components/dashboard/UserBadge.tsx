@@ -15,16 +15,18 @@ const UserBadge = () => {
         .from('profiles')
         .select('*')
         .eq('id', user?.id)
-        .single();
+        .maybeSingle();
         
       if (error) {
         console.error('Error fetching profile:', error);
         throw error;
       }
       
+      console.log('Fetched profile:', data);
       return data;
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    retry: false
   });
 
   if (!user) {

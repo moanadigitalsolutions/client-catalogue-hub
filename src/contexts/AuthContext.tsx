@@ -19,71 +19,56 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Initialize auth state from localStorage
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-        // If we have a user and we're on the login page, redirect to dashboard
-        if (location.pathname === '/login') {
-          navigate('/dashboard');
-        }
-      } catch (error) {
-        console.error('Error parsing stored user:', error);
-        localStorage.removeItem('user');
+    // Check active session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.id);
+      setUser(session?.user ?? null);
+      
+      if (event === 'SIGNED_IN') {
+        navigate('/dashboard');
+      } else if (event === 'SIGNED_OUT') {
+        navigate('/login');
+      } else if (event === 'TOKEN_REFRESHED') {
+        console.log('Token refreshed successfully');
       }
-    }
-    setLoading(false);
-  }, [navigate, location.pathname]);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
       console.log("AuthContext: Attempting sign in with email:", email);
       
-      // First try Supabase authentication
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
       if (error) {
-        console.log("Supabase auth failed, trying temp admin:", error.message);
-        // If Supabase auth fails, try temp admin login
-        if (email === "admin@temp.com" && password === "admin123") {
-          console.log("AuthContext: Temp admin login successful");
-          const mockUser = {
-            id: 'temp-admin',
-            email: 'admin@temp.com',
-            aud: 'authenticated',
-            created_at: new Date().toISOString(),
-            role: 'authenticated',
-          } as User;
-          
-          setUser(mockUser);
-          localStorage.setItem('user', JSON.stringify(mockUser));
-          toast.success("Logged in successfully as temp admin");
-          
-          const from = location.state?.from?.pathname || '/dashboard';
-          console.log("AuthContext: Redirecting to:", from);
-          navigate(from, { replace: true });
-          return;
-        }
+        console.error("AuthContext: Sign in error:", error);
         throw error;
       }
 
       if (data.user) {
-        console.log("AuthContext: Supabase login successful");
+        console.log("AuthContext: Login successful");
         setUser(data.user);
-        localStorage.setItem('user', JSON.stringify(data.user));
         toast.success("Logged in successfully");
         
         const from = location.state?.from?.pathname || '/dashboard';
         console.log("AuthContext: Redirecting to:", from);
         navigate(from, { replace: true });
-        return;
       }
       
     } catch (error) {
@@ -98,7 +83,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       setLoading(true);
       await supabase.auth.signOut();
-      localStorage.removeItem('user');
       setUser(null);
       navigate('/login');
       toast.success("Logged out successfully");
