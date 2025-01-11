@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { UserActions } from "./UserActions";
 import { UserNameEditor } from "./UserNameEditor";
 import { UserRoleCell } from "./UserRoleCell";
-import { UserRole } from "@/types"; // Added this import
+import { UserRole } from "@/types";
 
 export const UserList = () => {
   const [loading, setLoading] = useState(false);
@@ -44,7 +44,7 @@ export const UserList = () => {
 
       const transformedData = profiles.map(profile => ({
         id: profile.id,
-        name: profile.name,
+        name: profile.name || 'Unnamed User',
         email: profile.email || '',
         role: (userRoles.find(role => role.user_id === profile.id)?.role || 'employee') as UserRole
       }));
@@ -108,6 +108,7 @@ export const UserList = () => {
       }
 
       toast.success('User name updated successfully');
+      // Immediately invalidate and refetch the users query
       await queryClient.invalidateQueries({ queryKey: ['users'] });
       cancelEditing();
     } catch (error) {
