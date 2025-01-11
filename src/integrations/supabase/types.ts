@@ -443,6 +443,12 @@ export type Database = {
         }
         Returns: undefined
       }
+      convert_date_format: {
+        Args: {
+          input_date: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       client_activity_type:

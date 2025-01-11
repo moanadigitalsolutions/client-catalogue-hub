@@ -4,7 +4,7 @@ import { ReportData } from "@/utils/reportGenerator";
 import { ReportFormula } from "./FormulaBuilder";
 import { calculateFormulaResult } from "@/utils/formulaCalculator";
 import { DateRange } from "react-day-picker";
-import { startOfDay, endOfDay, parseISO, isValid } from "date-fns";
+import { startOfDay, endOfDay, parseISO, isValid, parse } from "date-fns";
 
 interface DataPreviewProps {
   data: ReportData[];
@@ -27,41 +27,22 @@ export const DataPreview = ({ data, displayFields, isLoading, formulas = [], dat
         }
 
         try {
-          // Parse the date and validate it
-          const creationDate = parseISO(row.created_at.toString());
+          // Parse the date assuming DD-MM-YYYY format
+          const creationDate = parse(row.created_at.toString(), 'dd-MM-yyyy', new Date());
+          
           if (!isValid(creationDate)) {
-            console.log('Invalid date format for row:', row);
-            return false;
+            // Try parsing as ISO format as fallback
+            const isoDate = parseISO(row.created_at.toString());
+            if (!isValid(isoDate)) {
+              console.log('Invalid date format for row:', row);
+              return false;
+            }
+            console.log('Parsed ISO date:', isoDate);
+            return handleDateComparison(isoDate, dateRange);
           }
 
-          const fromDate = startOfDay(dateRange.from!);
-          const toDate = dateRange.to ? endOfDay(dateRange.to) : undefined;
-          
-          console.log('Comparing dates:', {
-            creationDate: creationDate.toISOString(),
-            fromDate: fromDate.toISOString(),
-            toDate: toDate?.toISOString()
-          });
-          
-          const isInRange = toDate 
-            ? creationDate >= fromDate && creationDate <= toDate
-            : creationDate >= fromDate;
-
-          if (!isInRange) {
-            console.log('Row outside date range:', { 
-              row, 
-              creationDate: creationDate.toISOString(), 
-              fromDate: fromDate.toISOString(), 
-              toDate: toDate?.toISOString() 
-            });
-          } else {
-            console.log('Row within date range:', {
-              row,
-              creationDate: creationDate.toISOString()
-            });
-          }
-          
-          return isInRange;
+          console.log('Parsed DD-MM-YYYY date:', creationDate);
+          return handleDateComparison(creationDate, dateRange);
         } catch (error) {
           console.error('Error parsing date for row:', row, error);
           return false;
@@ -113,4 +94,34 @@ export const DataPreview = ({ data, displayFields, isLoading, formulas = [], dat
       </CardContent>
     </Card>
   );
+};
+
+// Helper function to handle date comparison
+const handleDateComparison = (date: Date, dateRange: DateRange) => {
+  const fromDate = startOfDay(dateRange.from!);
+  const toDate = dateRange.to ? endOfDay(dateRange.to) : undefined;
+  
+  console.log('Comparing dates:', {
+    date: date.toISOString(),
+    fromDate: fromDate.toISOString(),
+    toDate: toDate?.toISOString()
+  });
+  
+  const isInRange = toDate 
+    ? date >= fromDate && date <= toDate
+    : date >= fromDate;
+
+  if (!isInRange) {
+    console.log('Row outside date range:', { 
+      date: date.toISOString(), 
+      fromDate: fromDate.toISOString(), 
+      toDate: toDate?.toISOString() 
+    });
+  } else {
+    console.log('Row within date range:', {
+      date: date.toISOString()
+    });
+  }
+  
+  return isInRange;
 };
