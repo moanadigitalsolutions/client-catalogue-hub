@@ -9,7 +9,8 @@ export type FieldType =
   | "select"
   | "phone"
   | "url"
-  | "time";
+  | "time"
+  | "currency";
 
 export interface FormField {
   id: string;

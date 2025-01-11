@@ -116,6 +116,10 @@ export const NewFieldForm = ({ onFieldAdded, existingFields }: NewFieldFormProps
               <Label htmlFor="number">Number</Label>
             </div>
             <div className="flex items-center space-x-2">
+              <RadioGroupItem value="currency" id="currency" />
+              <Label htmlFor="currency">Currency ($)</Label>
+            </div>
+            <div className="flex items-center space-x-2">
               <RadioGroupItem value="date" id="date" />
               <Label htmlFor="date">Date</Label>
             </div>
