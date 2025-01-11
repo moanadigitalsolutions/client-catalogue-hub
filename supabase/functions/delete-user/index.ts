@@ -47,7 +47,8 @@ Deno.serve(async (req) => {
 
     console.log('User found, handling dependencies')
 
-    // Update user_activities to set user_id to null
+    // Instead of updating client_activities, we'll keep the records for audit purposes
+    // Update user_activities to set user_id to null where possible
     const { error: userActivitiesError } = await supabaseClient
       .from('user_activities')
       .update({ user_id: null })
@@ -56,17 +57,6 @@ Deno.serve(async (req) => {
     if (userActivitiesError) {
       console.error('Error updating user activities:', userActivitiesError)
       throw userActivitiesError
-    }
-
-    // Update client_activities to set user_id to null
-    const { error: clientActivitiesError } = await supabaseClient
-      .from('client_activities')
-      .update({ user_id: null })
-      .eq('user_id', userId)
-
-    if (clientActivitiesError) {
-      console.error('Error updating client activities:', clientActivitiesError)
-      throw clientActivitiesError
     }
 
     // Update client_deletion_requests to set requested_by and reviewed_by to null
