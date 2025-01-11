@@ -28,9 +28,11 @@ const DemographicsChart = ({ data = [], title, colors = DEFAULT_COLORS }: Demogr
   }
 
   const chartConfig = {
-    theme: {
-      light: '#ffffff',
-      dark: '#1a1a1a'
+    background: {
+      theme: {
+        light: '#ffffff',
+        dark: '#1a1a1a'
+      }
     }
   };
 
