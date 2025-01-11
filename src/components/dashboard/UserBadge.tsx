@@ -45,7 +45,7 @@ const UserBadge = () => {
       }
       
       console.log('Fetched user role:', data);
-      return data;
+      return data || { role: 'employee' }; // Default to employee if no role found
     },
     enabled: !!user?.id,
     retry: false

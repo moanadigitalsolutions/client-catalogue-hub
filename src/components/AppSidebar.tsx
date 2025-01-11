@@ -3,8 +3,8 @@ import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
-  SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarGroupContent,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -23,15 +23,21 @@ const AppSidebar = () => {
     const checkAdminStatus = async () => {
       if (!user) return;
 
+      console.log('Checking admin status for user:', user.id);
+      
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (!error && data) {
-        setIsAdmin(data.role === 'admin');
+      if (error) {
+        console.error('Error fetching user role:', error);
+        return;
       }
+
+      console.log('Fetched user role:', data);
+      setIsAdmin(data?.role === 'admin');
     };
 
     checkAdminStatus();
