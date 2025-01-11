@@ -22,6 +22,7 @@ const ClientForm = () => {
       if (!id) return;
 
       try {
+        console.log('Fetching client details for:', id);
         const { data, error } = await supabase
           .from('clients')
           .select('*')
@@ -29,7 +30,10 @@ const ClientForm = () => {
           .single();
 
         if (error) throw error;
-        if (data) reset(data);
+        if (data) {
+          console.log('Client data fetched:', data);
+          reset(data);
+        }
       } catch (error) {
         console.error('Error fetching client:', error);
         toast.error('Error fetching client details');
@@ -41,6 +45,7 @@ const ClientForm = () => {
 
   const handleSubmit = async (data: any) => {
     try {
+      console.log('Submitting client data:', data);
       if (id) {
         // Update existing client
         const { error } = await supabase

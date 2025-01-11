@@ -160,6 +160,7 @@ export type Database = {
           id: string
           income: number | null
           name: string
+          note: string | null
           notes: string | null
           phone: string | null
           postcode: string | null
@@ -179,6 +180,7 @@ export type Database = {
           id?: string
           income?: number | null
           name: string
+          note?: string | null
           notes?: string | null
           phone?: string | null
           postcode?: string | null
@@ -198,6 +200,7 @@ export type Database = {
           id?: string
           income?: number | null
           name?: string
+          note?: string | null
           notes?: string | null
           phone?: string | null
           postcode?: string | null
