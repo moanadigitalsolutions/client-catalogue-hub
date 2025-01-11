@@ -69,6 +69,19 @@ Deno.serve(async (req) => {
 
     console.log('Role assigned successfully')
 
+    // Generate password reset link
+    const { data: resetData, error: resetError } = await supabaseClient.auth.admin.generateLink({
+      type: 'recovery',
+      email,
+    })
+
+    if (resetError) {
+      console.error('Error generating reset link:', resetError)
+      throw resetError
+    }
+
+    console.log('Password reset link generated successfully')
+
     return new Response(
       JSON.stringify({ 
         message: 'User created successfully',
