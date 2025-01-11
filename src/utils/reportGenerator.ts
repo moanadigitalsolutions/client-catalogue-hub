@@ -139,7 +139,7 @@ const fetchReportData = async (fields: string[], dateRange?: DateRange): Promise
     
     let query = supabase
       .from('clients')
-      .select<'*', Database['public']['Tables']['clients']['Row']>(mappedFields.join(','));
+      .select<"*", Database['public']['Tables']['clients']['Row']>("*");
 
     // Add date range filter if provided
     if (dateRange?.from) {
