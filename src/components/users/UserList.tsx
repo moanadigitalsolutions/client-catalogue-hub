@@ -3,76 +3,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Trash2, Shield, Pencil, Check, X } from "lucide-react";
-import { toast } from "sonner";
-import { UserRoleSelect } from "./UserRoleSelect";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
-
-// Move user actions to a separate component
-const UserActions = ({ userId, currentUserId, loading, onDelete }: { 
-  userId: string; 
-  currentUserId: string | undefined; 
-  loading: boolean;
-  onDelete: (userId: string) => Promise<void>;
-}) => (
-  <Button
-    variant="ghost"
-    size="icon"
-    onClick={() => onDelete(userId)}
-    disabled={loading || userId === currentUserId}
-  >
-    <Trash2 className="h-4 w-4" />
-  </Button>
-);
-
-// Move name editing to a separate component
-const UserNameEditor = ({ 
-  user, 
-  isEditing, 
-  editingName, 
-  onStartEdit, 
-  onSave, 
-  onCancel, 
-  onNameChange 
-}: {
-  user: { id: string; name: string; role: string };
-  isEditing: boolean;
-  editingName: string;
-  onStartEdit: () => void;
-  onSave: () => void;
-  onCancel: () => void;
-  onNameChange: (value: string) => void;
-}) => (
-  <div className="flex items-center gap-2">
-    {user.role === 'admin' && <Shield className="h-4 w-4 text-blue-500" />}
-    {isEditing ? (
-      <div className="flex items-center gap-2">
-        <Input
-          value={editingName}
-          onChange={(e) => onNameChange(e.target.value)}
-          className="max-w-[200px]"
-        />
-        <Button variant="ghost" size="icon" onClick={onSave}>
-          <Check className="h-4 w-4" />
-        </Button>
-        <Button variant="ghost" size="icon" onClick={onCancel}>
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
-    ) : (
-      <div className="flex items-center gap-2">
-        <span>{user.name || 'Unnamed User'}</span>
-        <Button variant="ghost" size="icon" onClick={onStartEdit}>
-          <Pencil className="h-4 w-4" />
-        </Button>
-      </div>
-    )}
-  </div>
-);
+import { toast } from "sonner";
+import { UserActions } from "./UserActions";
+import { UserNameEditor } from "./UserNameEditor";
+import { UserRoleCell } from "./UserRoleCell";
 
 export const UserList = () => {
   const [loading, setLoading] = useState(false);
@@ -106,7 +43,7 @@ export const UserList = () => {
 
       const transformedData = profiles.map(profile => ({
         id: profile.id,
-        name: profile.name || 'Unnamed User',
+        name: profile.name,
         email: profile.email || '',
         role: userRoles.find(role => role.user_id === profile.id)?.role || 'employee'
       }));
@@ -144,9 +81,9 @@ export const UserList = () => {
     }
   };
 
-  const startEditing = (user: { id: string; name: string }) => {
+  const startEditing = (user: { id: string; name: string | null }) => {
     setEditingUserId(user.id);
-    setEditingName(user.name);
+    setEditingName(user.name || '');
   };
 
   const cancelEditing = () => {
@@ -237,10 +174,10 @@ export const UserList = () => {
                   </TableCell>
                   <TableCell>{user.email || 'No email'}</TableCell>
                   <TableCell>
-                    <UserRoleSelect 
-                      userId={user.id} 
-                      currentRole={user.role} 
-                      onRoleChange={() => queryClient.invalidateQueries({ queryKey: ['users'] })}
+                    <UserRoleCell 
+                      userId={user.id}
+                      currentRole={user.role}
+                      queryClient={queryClient}
                     />
                   </TableCell>
                   <TableCell>
