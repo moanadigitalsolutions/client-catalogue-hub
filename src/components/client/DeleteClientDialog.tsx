@@ -32,24 +32,45 @@ export const DeleteClientDialog = ({
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
 
-  // Fetch user role
+  // Fetch user role with proper error handling
   const { data: userRole } = useQuery({
     queryKey: ['userRole', user?.id],
     queryFn: async () => {
       console.log('Fetching user role for:', user?.id);
-      const { data, error } = await supabase
+      
+      // First check if user has a role
+      const { data: existingRole, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user?.id)
-        .single();
+        .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching user role:', error);
-        throw error;
+      if (roleError) {
+        console.error('Error fetching user role:', roleError);
+        throw roleError;
       }
 
-      console.log('User role:', data?.role);
-      return data?.role;
+      // If no role exists, create default employee role
+      if (!existingRole) {
+        console.log('No role found, creating default employee role');
+        const { data: newRole, error: insertError } = await supabase
+          .from('user_roles')
+          .insert([
+            { user_id: user?.id, role: 'employee' }
+          ])
+          .select('role')
+          .single();
+
+        if (insertError) {
+          console.error('Error creating default role:', insertError);
+          throw insertError;
+        }
+
+        return newRole?.role || 'employee';
+      }
+
+      console.log('User role:', existingRole?.role);
+      return existingRole?.role || 'employee';
     },
     enabled: !!user?.id,
   });
