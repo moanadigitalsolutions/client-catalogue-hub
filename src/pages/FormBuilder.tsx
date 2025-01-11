@@ -9,9 +9,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { FormField } from "@/types";
 import { FormFieldList } from "@/components/settings/FormFieldList";
-import { NewFieldForm } from "@/components/settings/NewFieldForm";
 import { FormPreview } from "@/components/settings/FormPreview";
-import { Eye, Save } from "lucide-react";
+import { Eye, Save, Plus } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const FormBuilder = () => {
   const { id } = useParams();
@@ -21,6 +29,27 @@ const FormBuilder = () => {
   const [description, setDescription] = useState("");
   const [fields, setFields] = useState<FormField[]>([]);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+
+  // Fetch existing form fields
+  const { data: availableFields = [] } = useQuery({
+    queryKey: ['formFields'],
+    queryFn: async () => {
+      console.log('Fetching available form fields...');
+      const { data, error } = await supabase
+        .from('form_fields')
+        .select('*')
+        .order('order_index');
+
+      if (error) {
+        console.error('Error fetching form fields:', error);
+        toast.error('Failed to load available fields');
+        throw error;
+      }
+
+      console.log('Available form fields loaded:', data);
+      return data as FormField[];
+    },
+  });
 
   // Fetch existing form if editing
   const { data: form, isLoading: isLoadingForm } = useQuery({
@@ -90,6 +119,17 @@ const FormBuilder = () => {
     }
   });
 
+  const handleAddFields = (selectedFields: FormField[]) => {
+    const newFields = [...fields];
+    selectedFields.forEach(field => {
+      if (!fields.find(f => f.field_id === field.field_id)) {
+        newFields.push(field);
+      }
+    });
+    setFields(newFields);
+    toast.success('Fields added to form');
+  };
+
   if (isLoadingForm) {
     return <div>Loading form...</div>;
   }
@@ -151,14 +191,82 @@ const FormBuilder = () => {
           </div>
 
           <div className="space-y-4">
-            <FormFieldList
-              fields={fields}
-              onFieldsUpdate={setFields}
-            />
-            <NewFieldForm
-              onFieldAdded={(field) => setFields([...fields, field])}
-              existingFields={fields}
-            />
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold">Form Fields</h3>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Fields
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Add Fields to Form</DialogTitle>
+                  </DialogHeader>
+                  <ScrollArea className="h-[400px] pr-4">
+                    <div className="space-y-4">
+                      {availableFields.map((field) => (
+                        <div key={field.id} className="flex items-start space-x-3 p-2 hover:bg-secondary rounded-lg">
+                          <Checkbox
+                            id={field.id}
+                            checked={fields.some(f => f.field_id === field.field_id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                handleAddFields([field]);
+                              } else {
+                                setFields(fields.filter(f => f.field_id !== field.field_id));
+                              }
+                            }}
+                          />
+                          <div className="space-y-1">
+                            <label
+                              htmlFor={field.id}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              {field.label}
+                            </label>
+                            <p className="text-sm text-muted-foreground">
+                              Type: {field.type}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </DialogContent>
+              </Dialog>
+            </div>
+            
+            {fields.length > 0 ? (
+              <div className="space-y-2">
+                {fields.map((field, index) => (
+                  <div
+                    key={field.id || index}
+                    className="flex items-center justify-between p-3 bg-secondary rounded-lg"
+                  >
+                    <div>
+                      <span className="font-medium">{field.label}</span>
+                      <span className="ml-2 text-sm text-muted-foreground">
+                        ({field.type}
+                        {field.required ? ", required" : ""})
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setFields(fields.filter((_, i) => i !== index))}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center p-8 text-muted-foreground">
+                No fields added to the form yet. Click "Add Fields" to select from available fields.
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
