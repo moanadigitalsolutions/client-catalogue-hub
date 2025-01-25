@@ -13,7 +13,6 @@ interface ReportOptions {
   dateRange?: DateRange;
 }
 
-// Define the database response type
 interface DatabaseResponse {
   data: any[] | null;
   error: Error | null;
@@ -122,11 +121,11 @@ const fetchReportData = async (fields: string[], dateRange?: DateRange): Promise
       }
     }
 
-    const { data, error }: DatabaseResponse = await query;
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error fetching report data:', error);
-      return [];
+      throw error;
     }
 
     if (!data || !Array.isArray(data)) {

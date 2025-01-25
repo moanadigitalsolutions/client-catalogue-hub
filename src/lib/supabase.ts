@@ -11,6 +11,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
   },
+  db: {
+    schema: 'public'
+  }
 });
 
 // Function to check database connection and verify table existence
@@ -18,8 +21,7 @@ export const initializeDatabase = async () => {
   console.log('Checking database connection...');
   
   try {
-    // Test the connection by attempting to query the clients table
-    const { count, error } = await supabase
+    const { data, error } = await supabase
       .from('clients')
       .select('*', { count: 'exact', head: true });
 
@@ -29,7 +31,7 @@ export const initializeDatabase = async () => {
     }
 
     console.log('Successfully connected to database and verified clients table exists');
-    console.log(`Number of clients in database: ${count}`);
+    console.log(`Number of clients in database: ${data?.length || 0}`);
     return true;
   } catch (error) {
     console.error('Database initialization error:', error);
