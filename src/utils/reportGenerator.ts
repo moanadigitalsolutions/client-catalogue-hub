@@ -1,52 +1,70 @@
 import { supabase } from '@/lib/supabase';
-import { DateRange } from '@/types';
+import { DateRange } from "react-day-picker";
 
-interface ReportFilters {
-  city?: string;
-  status?: string;
-  dateRange?: DateRange;
-}
-
-interface ClientData {
+export interface ReportData {
   id: string;
-  created_at: string;
+  created_at: string | Date;
   [key: string]: string | number | boolean | Date;
 }
 
-const fetchReportData = async (filters: ReportFilters = {}) => {
+interface ReportFilters {
+  fields?: string[];
+  dateRange?: DateRange;
+}
+
+export const formatValue = (value: any, fieldName: string): string => {
+  if (value === null || value === undefined) return '';
+  
+  if (fieldName === 'created_at' && (typeof value === 'string' || value instanceof Date)) {
+    const date = typeof value === 'string' ? new Date(value) : value;
+    return date.toLocaleDateString();
+  }
+  
+  return String(value);
+};
+
+export const generatePreviewData = async (
+  fields: string[],
+  dateRange?: DateRange
+): Promise<ReportData[]> => {
   try {
     let query = supabase.from('clients').select('*');
 
-    if (filters.city) {
-      query = query.eq('city', filters.city);
-    }
-
-    if (filters.status) {
-      query = query.eq('status', filters.status);
-    }
-
-    if (filters.dateRange?.from && filters.dateRange?.to) {
-      query = query.gte('created_at', filters.dateRange.from.toISOString())
-                  .lte('created_at', filters.dateRange.to.toISOString());
+    if (dateRange?.from && dateRange?.to) {
+      query = query
+        .gte('created_at', dateRange.from.toISOString())
+        .lte('created_at', dateRange.to.toISOString());
     }
 
     const { data, error } = await query;
 
     if (error) {
-      console.error('Error fetching report data:', error);
+      console.error('Error fetching preview data:', error);
       throw error;
     }
 
-    if (!data) {
-      return [];
-    }
-
-    return data as ClientData[];
+    return (data || []) as ReportData[];
   } catch (error) {
-    console.error('Error in fetchReportData:', error);
+    console.error('Error in generatePreviewData:', error);
     return [];
   }
 };
 
-export { fetchReportData };
-export type { ReportFilters, ClientData };
+export const generateReport = async (
+  format: "pdf" | "excel",
+  filters: ReportFilters
+): Promise<{ blob: Blob; filename: string }> => {
+  try {
+    const data = await generatePreviewData(filters.fields || [], filters.dateRange);
+    
+    // For now, just return a simple text file
+    const content = JSON.stringify(data, null, 2);
+    const blob = new Blob([content], { type: 'text/plain' });
+    const filename = `report-${new Date().toISOString()}.${format}`;
+    
+    return { blob, filename };
+  } catch (error) {
+    console.error('Error generating report:', error);
+    throw error;
+  }
+};
