@@ -1,49 +1,42 @@
-import { format } from "date-fns";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
 import { supabase } from "@/lib/supabase";
 import { DateRange } from "react-day-picker";
-import { Database } from "@/integrations/supabase/types";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export interface ReportData {
   [key: string]: string | number | boolean | null | Date;
 }
 
-export interface ReportOptions {
+interface ReportOptions {
   fields: string[];
   dateRange?: DateRange;
 }
 
-export const formatValue = (value: any, fieldType: string) => {
-  if (value === null || value === undefined) return '';
+// Define the database response type
+interface DatabaseResponse {
+  data: any[] | null;
+  error: Error | null;
+}
 
-  // Handle date fields
-  if (fieldType === 'dob' || fieldType === 'date' || fieldType === 'created_at') {
-    try {
-      return format(new Date(value), 'dd/MM/yyyy');
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return value;
-    }
+export const generateReport = async (format: "pdf" | "excel", options: ReportOptions) => {
+  console.log('Generating report with options:', options);
+  
+  // Get real data from the database
+  const data = await fetchReportData(options.fields, options.dateRange);
+  
+  let blob: Blob;
+  let filename: string;
+  
+  if (format === "pdf") {
+    blob = generatePDF(data, options.fields);
+    filename = `report_${format}_${new Date().toISOString()}.pdf`;
+  } else {
+    blob = generateExcel(data, options.fields);
+    filename = `report_${format}_${new Date().toISOString()}.xlsx`;
   }
-
-  // Handle boolean fields
-  if (typeof value === 'boolean') {
-    return value ? 'Yes' : 'No';
-  }
-
-  // Handle array fields
-  if (Array.isArray(value)) {
-    return value.join(', ');
-  }
-
-  // Handle currency fields
-  if (fieldType === 'currency' && typeof value === 'number') {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
-  }
-
-  return String(value);
+  
+  return { blob, filename };
 };
 
 const generatePDF = (data: ReportData[], fields: string[]): Blob => {
@@ -105,26 +98,6 @@ const generateExcel = (data: ReportData[], fields: string[]): Blob => {
   return new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 };
 
-export const generateReport = async (format: "pdf" | "excel", options: ReportOptions) => {
-  console.log('Generating report with options:', options);
-  
-  // Get real data from the database
-  const data = await fetchReportData(options.fields, options.dateRange);
-  
-  let blob: Blob;
-  let filename: string;
-  
-  if (format === "pdf") {
-    blob = generatePDF(data, options.fields);
-    filename = `report_${format}_${new Date().toISOString()}.pdf`;
-  } else {
-    blob = generateExcel(data, options.fields);
-    filename = `report_${format}_${new Date().toISOString()}.xlsx`;
-  }
-  
-  return { blob, filename };
-};
-
 // Fetch real data from Supabase
 const fetchReportData = async (fields: string[], dateRange?: DateRange): Promise<ReportData[]> => {
   console.log('Fetching report data for fields:', fields);
@@ -139,7 +112,7 @@ const fetchReportData = async (fields: string[], dateRange?: DateRange): Promise
     
     let query = supabase
       .from('clients')
-      .select<"*", Database['public']['Tables']['clients']['Row']>("*");
+      .select(mappedFields.join(','));
 
     // Add date range filter if provided
     if (dateRange?.from) {
@@ -149,14 +122,17 @@ const fetchReportData = async (fields: string[], dateRange?: DateRange): Promise
       }
     }
 
-    const { data, error } = await query;
+    const { data, error }: DatabaseResponse = await query;
 
     if (error) {
       console.error('Error fetching report data:', error);
       return [];
     }
 
-    if (!data || !Array.isArray(data)) return [];
+    if (!data || !Array.isArray(data)) {
+      console.log('No data returned from query');
+      return [];
+    }
     
     // Transform the data back to use birth_date instead of dob in the response
     return data.map(row => {
@@ -174,6 +150,37 @@ const fetchReportData = async (fields: string[], dateRange?: DateRange): Promise
     console.error('Error in fetchReportData:', error);
     return [];
   }
+};
+
+export const formatValue = (value: any, fieldType: string): string => {
+  if (value === null || value === undefined) return '';
+
+  // Handle date fields
+  if (fieldType === 'dob' || fieldType === 'date' || fieldType === 'created_at') {
+    try {
+      return new Date(value).toLocaleDateString();
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return value;
+    }
+  }
+
+  // Handle boolean fields
+  if (typeof value === 'boolean') {
+    return value ? 'Yes' : 'No';
+  }
+
+  // Handle array fields
+  if (Array.isArray(value)) {
+    return value.join(', ');
+  }
+
+  // Handle currency fields
+  if (fieldType === 'currency' && typeof value === 'number') {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+  }
+
+  return String(value);
 };
 
 // Generate preview data from real database
